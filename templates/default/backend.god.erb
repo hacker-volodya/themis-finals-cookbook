@@ -1,0 +1,22 @@
+(0...<%= node['themis-finals']['backend']['processes'] %>).to_a.each do |num|
+  God.watch do |w|
+    w.group = 'backends'
+    w.name = "backend-#{num}"
+    w.dir = '<%= node['themis-finals']['basedir'] %>'
+    w.uid = '<%= node['themis-finals']['user'] %>'
+    w.gid = '<%= node['themis-finals']['group'] %>'
+    w.log = "<%= node['themis-finals']['basedir'] %>/logs/backend-#{num}.log"
+    w.start = 'bundle exec ruby backend.rb'
+    w.keepalive
+    w.env = {
+      'PORT' => "#{3000 + num}",
+      'LOG_LEVEL' => '<%= node['themis-finals']['log_level'] %>',
+      'STDOUT_SYNC' => '<%= node['themis-finals']['stdout_sync'] %>',
+      <% if node['themis-finals']['production'] %>
+      'RACK_ENV' => 'production'
+      <% else %>
+      'RACK_ENV' => 'development'
+      <% end %>
+    }
+  end
+end
