@@ -154,21 +154,55 @@ end
 template "#{node[id][:basedir]}/god.d/queue.god" do
   source 'queue.god.erb'
   mode 0644
+  variables(
+    basedir: node[id][:basedir],
+    user: node[id][:user],
+    group: node[id][:group],
+    log_level: node[id][:log_level],
+    stdout_sync: node[id][:stdout_sync],
+    processes: node[id][:queue][:processes]
+  )
+  action :create
 end
 
 template "#{node[id][:basedir]}/god.d/scheduler.god" do
   source 'scheduler.god.erb'
-  mode '0644'
+  mode 0644
+  variables(
+    basedir: node[id][:basedir],
+    user: node[id][:user],
+    group: node[id][:group],
+    log_level: node[id][:log_level],
+    stdout_sync: node[id][:stdout_sync]
+  )
+  action :create
 end
 
 template "#{node[id][:basedir]}/god.d/backend.god" do
   source 'backend.god.erb'
-  mode '0644'
+  mode 0644
+  variables(
+    basedir: node[id][:basedir],
+    user: node[id][:user],
+    group: node[id][:group],
+    log_level: node[id][:log_level],
+    stdout_sync: node[id][:stdout_sync],
+    production: node[id][:production],
+    processes: node[id][:backend][:processes]
+  )
+  action :create
 end
 
 template "#{node[id][:basedir]}/god.d/stream.god" do
   source 'stream.god.erb'
-  mode '0644'
+  mode 0644
+  variables(
+    basedir: node[id][:basedir],
+    user: node[id][:user],
+    group: node[id][:group],
+    processes: node[id][:stream][:processes]
+  )
+  action :create
 end
 
 python_pip 'twine'
@@ -176,8 +210,14 @@ python_pip 'wheel'
 
 template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
   source 'nginx.conf.erb'
-  mode '0644'
+  mode 0644
+  variables(
+    basedir: node[id][:basedir],
+    backend_processes: node[id][:backend][:processes],
+    stream_processes: node[id][:stream][:processes]
+  )
   notifies :reload, 'service[nginx]', :delayed
+  action :create
 end
 
 nginx_site 'themis-finals.conf'

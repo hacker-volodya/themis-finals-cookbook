@@ -1,11 +1,11 @@
 upstream backend {
-  <% (0...node['themis-finals']['backend']['processes']).to_a.each do |num| %>
+  <% (0...@backend_processes).to_a.each do |num| %>
   server 127.0.0.1:<%= 3000 + num %>;
   <% end %>
 }
 
 upstream stream {
-  <% (0...node['themis-finals']['stream']['processes']).to_a.each do |num| %>
+  <% (0...@stream_processes).to_a.each do |num| %>
   server 127.0.0.1:<%= 4000 + num %>;
   <% end %>
 }
@@ -13,19 +13,19 @@ upstream stream {
 server {
   listen 80 default;
 
-  access_log <%= node['themis-finals']['basedir'] %>/logs/nginx_access.log;
-  error_log <%= node['themis-finals']['basedir'] %>/logs/nginx_error.log;
+  access_log <%= @basedir %>/logs/nginx_access.log;
+  error_log <%= @basedir %>/logs/nginx_error.log;
 
   keepalive_timeout 100;
   charset utf-8;
 
   location / {
-    root <%= node['themis-finals']['basedir'] %>/www/build/html;
+    root <%= @basedir %>/www/build/html;
     rewrite ^(.*)$ /index.html break;
   }
 
   location /assets/ {
-    root <%= node['themis-finals']['basedir'] %>/www/build;
+    root <%= @basedir %>/www/build;
   }
 
   location /api/ {

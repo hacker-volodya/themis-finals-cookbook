@@ -1,13 +1,13 @@
 God.watch do |w|
   w.name = 'scheduler'
-  w.dir = '<%= node['themis-finals']['basedir'] %>'
-  w.uid = '<%= node['themis-finals']['user'] %>'
-  w.gid = '<%= node['themis-finals']['group'] %>'
-  w.log = '<%= node['themis-finals']['basedir'] %>/logs/scheduler.log'
+  w.dir = '<%= @basedir %>'
+  w.uid = '<%= @user %>'
+  w.gid = '<%= @group %>'
+  w.log = '<%= @basedir %>/logs/scheduler.log'
   w.start = 'bundle exec ruby scheduler.rb'
   w.env = {
-    'LOG_LEVEL' => '<%= node['themis-finals']['log_level'] %>',
-    'STDOUT_SYNC' => '<%= node['themis-finals']['stdout_sync'] %>'
+    'LOG_LEVEL' => '<%= @log_level %>',
+    'STDOUT_SYNC' => '<%= @stdout_sync %>'
   }
   w.keepalive
 end
