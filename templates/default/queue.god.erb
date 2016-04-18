@@ -1,11 +1,11 @@
 (0...<%= @processes %>).to_a.each do |num|
   God.watch do |w|
-    w.group = 'queues'
+    w.group = 'queue'
     w.name = "queue-#{num}"
     w.dir = '<%= @basedir %>'
     w.uid = '<%= @user %>'
     w.gid = '<%= @group %>'
-    w.log = "<%= @basedir %>/logs/queue-#{num}.log"
+    w.log = "<%= @logs_basedir %>/queue-#{num}.log"
     w.start = 'bundle exec ruby queue.rb'
     w.env = {
       'LOG_LEVEL' => '<%= @log_level %>',

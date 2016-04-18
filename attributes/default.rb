@@ -1,22 +1,9 @@
 id = 'themis-finals'
 
-default[id][:ruby_version] = '2.3.0'
-
-default[id][:basedir] = '/var/themis/finals'
-
 default[id][:user] = 'vagrant'
 default[id][:group] = 'vagrant'
 
-default[id][:repository] = 'aspyatkin/themis-finals'
-default[id][:revision] = 'develop'
-
-default[id][:log_level] = 'DEBUG'
-default[id][:stdout_sync] = true
-default[id][:production] = false
-
-default[id][:queue][:processes] = 2
-default[id][:backend][:processes] = 2
-default[id][:stream][:processes] = 2
+default[id][:ruby][:version] = '2.3.0'
 
 default[id][:postgres][:version] = '9.5'
 default[id][:postgres][:dbname] = 'themis-finals'
@@ -30,3 +17,21 @@ default[id][:redis][:db] = 1
 
 default[id][:beanstalkd][:listen][:address] = '127.0.0.1'
 default[id][:beanstalkd][:listen][:port] = 11300
+
+default[id][:basedir] = '/var/themis/finals'
+
+default[id][:backend][:github_repository] = 'aspyatkin/themis-finals-backend'
+default[id][:backend][:revision] = 'develop'
+default[id][:backend][:debug] = true
+default[id][:backend][:queue][:processes] = 2
+default[id][:backend][:app][:processes] = 2
+default[id][:backend][:app][:port_range_start] = 3000
+
+default[id][:frontend][:github_repository] = 'aspyatkin/themis-finals-frontend'
+default[id][:frontend][:revision] = 'develop'
+
+default[id][:stream][:github_repository] = 'aspyatkin/themis-finals-stream'
+default[id][:stream][:revision] = 'develop'
+default[id][:stream][:port_range_start] = 4000
+default[id][:stream][:processes] = 2
+default[id][:stream][:debug] = true

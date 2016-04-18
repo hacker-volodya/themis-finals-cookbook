@@ -3,7 +3,7 @@ God.watch do |w|
   w.dir = '<%= @basedir %>'
   w.uid = '<%= @user %>'
   w.gid = '<%= @group %>'
-  w.log = '<%= @basedir %>/logs/scheduler.log'
+  w.log = '<%= @logs_basedir %>/scheduler.log'
   w.start = 'bundle exec ruby scheduler.rb'
   w.env = {
     'LOG_LEVEL' => '<%= @log_level %>',

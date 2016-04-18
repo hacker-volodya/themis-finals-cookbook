@@ -1,15 +1,16 @@
 (0...<%= @processes %>).to_a.each do |num|
   God.watch do |w|
-    w.group = 'streams'
+    w.group = 'stream'
     w.name = "stream-#{num}"
-    w.dir = '<%= @basedir %>/stream'
+    w.dir = '<%= @basedir %>'
     w.uid = '<%= @user %>'
     w.gid = '<%= @group %>'
-    w.log = "<%= @basedir %>/logs/stream-#{num}.log"
+    w.log = "<%= @logs_basedir %>/stream-#{num}.log"
     w.start = './bin/app'
     w.keepalive
     w.env = {
-      'PORT' => "#{4000 + num}"
+      'PORT' => "#{<%= @port_range_start %> + num}",
+      'LOG_LEVEL' => '<%= @log_level %>'
     }
   end
 end

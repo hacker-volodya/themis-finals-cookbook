@@ -1,31 +1,31 @@
-upstream backend {
-  <% (0...@backend_processes).to_a.each do |num| %>
-  server 127.0.0.1:<%= 3000 + num %>;
+upstream backend_app {
+  <% (0...@backend_app_processes).to_a.each do |num| %>
+  server 127.0.0.1:<%= @backend_app_port_range_start + num %>;
   <% end %>
 }
 
 upstream stream {
   <% (0...@stream_processes).to_a.each do |num| %>
-  server 127.0.0.1:<%= 4000 + num %>;
+  server 127.0.0.1:<%= @stream_port_range_start + num %>;
   <% end %>
 }
 
 server {
   listen 80 default;
 
-  access_log <%= @basedir %>/logs/nginx_access.log;
-  error_log <%= @basedir %>/logs/nginx_error.log;
+  access_log <%= @logs_basedir %>/nginx_access.log;
+  error_log <%= @logs_basedir %>/nginx_error.log;
 
   keepalive_timeout 100;
   charset utf-8;
 
   location / {
-    root <%= @basedir %>/www/build/html;
+    root <%= @frontend_basedir %>/build/html;
     rewrite ^(.*)$ /index.html break;
   }
 
   location /assets/ {
-    root <%= @basedir %>/www/build;
+    root <%= @frontend_basedir %>/build;
   }
 
   location /api/ {
@@ -33,7 +33,7 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header Host $http_host;
 
-    proxy_pass http://backend/;
+    proxy_pass http://backend_app/;
     proxy_redirect off;
 
     proxy_http_version 1.1;

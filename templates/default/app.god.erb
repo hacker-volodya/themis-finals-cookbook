@@ -1,22 +1,18 @@
 (0...<%= @processes %>).to_a.each do |num|
   God.watch do |w|
-    w.group = 'backends'
-    w.name = "backend-#{num}"
+    w.group = 'app'
+    w.name = "app-#{num}"
     w.dir = '<%= @basedir %>'
     w.uid = '<%= @user %>'
     w.gid = '<%= @group %>'
-    w.log = "<%= @basedir %>/logs/backend-#{num}.log"
+    w.log = "<%= @logs_basedir %>/app-#{num}.log"
     w.start = 'bundle exec ruby backend.rb'
     w.keepalive
     w.env = {
-      'PORT' => "#{3000 + num}",
+      'PORT' => "#{<%= @port_range_start %> + num}",
       'LOG_LEVEL' => '<%= @log_level %>',
       'STDOUT_SYNC' => '<%= @stdout_sync %>',
-      <% if @production %>
-      'RACK_ENV' => 'production'
-      <% else %>
-      'RACK_ENV' => 'development'
-      <% end %>
+      'RACK_ENV' => '<%= @rack_env %>'
     }
   end
 end
