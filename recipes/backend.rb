@@ -94,6 +94,8 @@ template "#{god_basedir}/scheduler.god" do
   action :create
 end
 
+team_logos_dir = ::File.join node[id][:basedir], 'team_logos'
+
 template "#{god_basedir}/app.god" do
   source 'app.god.erb'
   mode 0644
@@ -106,7 +108,8 @@ template "#{god_basedir}/app.god" do
     stdout_sync: node[id][:backend][:debug],
     rack_env: node.chef_environment,
     processes: node[id][:backend][:app][:processes],
-    port_range_start: node[id][:backend][:app][:port_range_start]
+    port_range_start: node[id][:backend][:app][:port_range_start],
+    team_logos_dir: team_logos_dir
   )
   action :create
 end

@@ -9,6 +9,8 @@
     w.start = 'bundle exec ruby backend.rb'
     w.keepalive
     w.env = {
+      'TEAM_LOGOS_DIR' => '<%= @team_logos_dir %>',
+      'LISTEN' => '127.0.0.1',
       'PORT' => "#{<%= @port_range_start %> + num}",
       'LOG_LEVEL' => '<%= @log_level %>',
       'STDOUT_SYNC' => '<%= @stdout_sync %>',

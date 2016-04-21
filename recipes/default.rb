@@ -80,6 +80,16 @@ directory checkers_basedir do
   action :create
 end
 
+team_logos_dir = ::File.join node[id][:basedir], 'team_logos'
+
+directory team_logos_dir do
+  owner node[id][:user]
+  group node[id][:group]
+  mode 0755
+  recursive true
+  action :create
+end
+
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
