@@ -4,4 +4,3 @@ include_recipe 'python::virtualenv'
 
 python_pip 'twine'
 python_pip 'wheel'
-python_pip 'glances'

@@ -110,3 +110,5 @@ template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
 end
 
 nginx_site 'themis-finals.conf'
+
+include_recipe "#{id}::tools_monitoring"

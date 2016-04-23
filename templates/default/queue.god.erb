@@ -8,6 +8,13 @@
     w.log = "<%= @logs_basedir %>/queue-#{num}.log"
     w.start = 'bundle exec ruby queue.rb'
     w.env = {
+      <% if @post_scoreboard %>
+      'CTFTIME_SCOREBOARD' => 'true',
+      'AWS_ACCESS_KEY_ID' => '<%= @aws_access_key_id %>',
+      'AWS_SECRET_ACCESS_KEY' => '<%= @aws_secret_access_key %>',
+      'AWS_REGION' => '<%= @aws_region %>',
+      'AWS_BUCKET' => '<%= @aws_bucket %>',
+      <% end %>
       'LOG_LEVEL' => '<%= @log_level %>',
       'STDOUT_SYNC' => '<%= @stdout_sync %>'
     }

@@ -65,6 +65,34 @@ end
 
 god_basedir = ::File.join node[id][:basedir], 'god.d'
 
+aws_data_bag_item = nil
+begin
+  aws_data_bag_item = data_bag_item('aws', node.chef_environment)
+rescue
+end
+
+aws_credentials = (aws_data_bag_item.nil?) ? {} : aws_data_bag_item.to_hash.fetch('credentials', {})
+
+post_scoreboard = node[id][:post_scoreboard] && aws_credentials.key?('access_key_id') && aws_credentials.key?('secret_access_key') && aws_credentials.key?('bucket') && aws_credentials.key?('region')
+
+if post_scoreboard
+  dotenv_file = ::File.join basedir, '.env'
+
+  template dotenv_file do
+    source 'dotenv.erb'
+    user node[id][:user]
+    group node[id][:group]
+    mode 0600
+    variables(
+      aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
+      aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
+      aws_bucket: aws_credentials.fetch('bucket', nil),
+      aws_region: aws_credentials.fetch('region', nil)
+    )
+    action :create
+  end
+end
+
 template "#{god_basedir}/queue.god" do
   source 'queue.god.erb'
   mode 0644
@@ -75,7 +103,12 @@ template "#{god_basedir}/queue.god" do
     group: node[id][:group],
     log_level: node[id][:backend][:debug] ? 'DEBUG' : 'INFO',
     stdout_sync: node[id][:backend][:debug],
-    processes: node[id][:backend][:queue][:processes]
+    processes: node[id][:backend][:queue][:processes],
+    post_scoreboard: post_scoreboard,
+    aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
+    aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
+    aws_bucket: aws_credentials.fetch('bucket', nil),
+    aws_region: aws_credentials.fetch('region', nil)
   )
   action :create
 end

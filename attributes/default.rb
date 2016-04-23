@@ -35,3 +35,5 @@ default[id][:stream][:revision] = 'develop'
 default[id][:stream][:port_range_start] = 4000
 default[id][:stream][:processes] = 2
 default[id][:stream][:debug] = true
+
+default[id][:post_scoreboard] = true
