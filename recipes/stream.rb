@@ -75,7 +75,15 @@ template "#{god_basedir}/stream.god" do
     group: node[id][:group],
     processes: node[id][:stream][:processes],
     port_range_start: node[id][:stream][:port_range_start],
-    log_level: node[id][:stream][:debug] ? 'debug' : 'info'
+    log_level: node[id][:stream][:debug] ? 'debug' : 'info',
+    redis_host: node[id][:redis][:listen][:address],
+    redis_port: node[id][:redis][:listen][:port],
+    redis_db: node[id][:redis][:db],
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_database: node[id][:postgres][:dbname]
   )
   action :create
 end

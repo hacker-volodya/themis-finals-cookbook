@@ -17,6 +17,7 @@ default[id][:redis][:db] = 1
 
 default[id][:beanstalkd][:listen][:address] = '127.0.0.1'
 default[id][:beanstalkd][:listen][:port] = 11300
+default[id][:beanstalkd][:tube_namespace] = 'themis.finals'
 
 default[id][:basedir] = '/var/themis/finals'
 

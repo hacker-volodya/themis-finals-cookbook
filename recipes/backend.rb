@@ -87,7 +87,15 @@ if post_scoreboard
       aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
       aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
       aws_bucket: aws_credentials.fetch('bucket', nil),
-      aws_region: aws_credentials.fetch('region', nil)
+      aws_region: aws_credentials.fetch('region', nil),
+      redis_host: node[id][:redis][:listen][:address],
+      redis_port: node[id][:redis][:listen][:port],
+      redis_db: node[id][:redis][:db],
+      pg_host: node[id][:postgres][:listen][:address],
+      pg_port: node[id][:postgres][:listen][:port],
+      pg_username: node[id][:postgres][:username],
+      pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+      pg_database: node[id][:postgres][:dbname]
     )
     action :create
   end
@@ -108,7 +116,17 @@ template "#{god_basedir}/queue.god" do
     aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
     aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
     aws_bucket: aws_credentials.fetch('bucket', nil),
-    aws_region: aws_credentials.fetch('region', nil)
+    aws_region: aws_credentials.fetch('region', nil),
+    beanstalkd_uri: "#{node[id][:beanstalkd][:listen][:address]}:#{node[id][:beanstalkd][:listen][:port]}",
+    beanstalkd_tube_namespace: node[id][:beanstalkd][:tube_namespace],
+    redis_host: node[id][:redis][:listen][:address],
+    redis_port: node[id][:redis][:listen][:port],
+    redis_db: node[id][:redis][:db],
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_database: node[id][:postgres][:dbname]
   )
   action :create
 end
@@ -122,7 +140,17 @@ template "#{god_basedir}/scheduler.god" do
     user: node[id][:user],
     group: node[id][:group],
     log_level: node[id][:backend][:debug] ? 'DEBUG' : 'INFO',
-    stdout_sync: node[id][:backend][:debug]
+    stdout_sync: node[id][:backend][:debug],
+    beanstalkd_uri: "#{node[id][:beanstalkd][:listen][:address]}:#{node[id][:beanstalkd][:listen][:port]}",
+    beanstalkd_tube_namespace: node[id][:beanstalkd][:tube_namespace],
+    redis_host: node[id][:redis][:listen][:address],
+    redis_port: node[id][:redis][:listen][:port],
+    redis_db: node[id][:redis][:db],
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_database: node[id][:postgres][:dbname]
   )
   action :create
 end
@@ -142,7 +170,17 @@ template "#{god_basedir}/app.god" do
     rack_env: node.chef_environment,
     processes: node[id][:backend][:app][:processes],
     port_range_start: node[id][:backend][:app][:port_range_start],
-    team_logos_dir: team_logos_dir
+    team_logos_dir: team_logos_dir,
+    beanstalkd_uri: "#{node[id][:beanstalkd][:listen][:address]}:#{node[id][:beanstalkd][:listen][:port]}",
+    beanstalkd_tube_namespace: node[id][:beanstalkd][:tube_namespace],
+    redis_host: node[id][:redis][:listen][:address],
+    redis_port: node[id][:redis][:listen][:port],
+    redis_db: node[id][:redis][:db],
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_database: node[id][:postgres][:dbname]
   )
   action :create
 end

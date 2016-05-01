@@ -14,7 +14,17 @@
       'PORT' => "#{<%= @port_range_start %> + num}",
       'LOG_LEVEL' => '<%= @log_level %>',
       'STDOUT_SYNC' => '<%= @stdout_sync %>',
-      'RACK_ENV' => '<%= @rack_env %>'
+      'RACK_ENV' => '<%= @rack_env %>',
+      'BEANSTALKD_URI' => '<%= @beanstalkd_uri %>',
+      'BEANSTALKD_TUBE_NAMESPACE' => '<%= @beanstalkd_tube_namespace %>',
+      'REDIS_HOST' => '<%= @redis_host %>',
+      'REDIS_PORT' => '<%= @redis_port %>',
+      'REDIS_DB' => '<%= @redis_db %>',
+      'PG_HOST' => '<%= @pg_host %>',
+      'PG_PORT' => '<%= @pg_port %>',
+      'PG_USERNAME' => '<%= @pg_username %>',
+      'PG_PASSWORD' => '<%= @pg_password %>',
+      'PG_DATABASE' => '<%= @pg_database %>'
     }
   end
 end
