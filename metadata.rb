@@ -1,6 +1,6 @@
 name 'themis-finals'
 description 'Installs and configures Themis Finals'
-version '1.1.3'
+version '1.1.4'
 
 recipe 'themis-finals', 'Installs and configures Themis Finals'
 depends 'latest-git', '~> 1.1.6'
@@ -17,3 +17,4 @@ depends 'database', '~> 4.0.9'
 depends 'python', '~> 1.4.6'
 depends 'rbenv', '1.7.1'
 depends 'beanstalkd', '~> 0.1.5'
+depends 'supervisor', '~> 0.4.12'

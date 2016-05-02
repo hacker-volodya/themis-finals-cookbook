@@ -19,6 +19,8 @@ default[id][:beanstalkd][:listen][:address] = '127.0.0.1'
 default[id][:beanstalkd][:listen][:port] = 11300
 default[id][:beanstalkd][:tube_namespace] = 'themis.finals'
 
+default[id][:supervisor][:namespace] = 'themis.finals'
+
 default[id][:basedir] = '/var/themis/finals'
 
 default[id][:backend][:github_repository] = 'aspyatkin/themis-finals-backend'

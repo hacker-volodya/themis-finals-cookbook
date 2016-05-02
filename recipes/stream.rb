@@ -63,27 +63,50 @@ nodejs_npm "Install dependencies at #{basedir}" do
   group node[id][:group]
 end
 
-god_basedir = ::File.join node[id][:basedir], 'god.d'
+logs_basedir = ::File.join node[id][:basedir], 'logs'
 
-template "#{god_basedir}/stream.god" do
-  source 'stream.god.erb'
-  mode 0644
-  variables(
-    basedir: basedir,
-    logs_basedir: ::File.join(node[id][:basedir], 'logs'),
-    user: node[id][:user],
-    group: node[id][:group],
-    processes: node[id][:stream][:processes],
-    port_range_start: node[id][:stream][:port_range_start],
-    log_level: node[id][:stream][:debug] ? 'debug' : 'info',
-    redis_host: node[id][:redis][:listen][:address],
-    redis_port: node[id][:redis][:listen][:port],
-    redis_db: node[id][:redis][:db],
-    pg_host: node[id][:postgres][:listen][:address],
-    pg_port: node[id][:postgres][:listen][:port],
-    pg_username: node[id][:postgres][:username],
-    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
-    pg_database: node[id][:postgres][:dbname]
+supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
+  command ::File.join basedir, 'bin', 'app'
+  process_name 'stream-%(process_num)s'
+  numprocs node[id][:stream][:processes]
+  numprocs_start 0
+  priority 300
+  autostart false
+  autorestart true
+  startsecs 1
+  startretries 3
+  exitcodes [0, 2]
+  stopsignal :INT
+  stopwaitsecs 10
+  stopasgroup false
+  killasgroup false
+  user node[id][:user]
+  redirect_stderr false
+  stdout_logfile ::File.join logs_basedir, 'stream-%(process_num)s-stdout.log'
+  stdout_logfile_maxbytes '10MB'
+  stdout_logfile_backups 10
+  stdout_capture_maxbytes '0'
+  stdout_events_enabled false
+  stderr_logfile ::File.join logs_basedir, 'stream-%(process_num)s-stderr.log'
+  stderr_logfile_maxbytes '10MB'
+  stderr_logfile_backups 10
+  stderr_capture_maxbytes '0'
+  stderr_events_enabled false
+  environment(
+    'HOST' => '127.0.0.1',
+    'PORT_RANGE_START' => node[id][:stream][:port_range_start],
+    'APP_INSTANCE' => '%(process_num)s',
+    'LOG_LEVEL' => node[id][:stream][:debug] ? 'debug' : 'info',
+    'REDIS_HOST' => node[id][:redis][:listen][:address],
+    'REDIS_PORT' => node[id][:redis][:listen][:port],
+    'REDIS_DB' => node[id][:redis][:db],
+    'PG_HOST' => node[id][:postgres][:listen][:address],
+    'PG_PORT' => node[id][:postgres][:listen][:port],
+    'PG_USERNAME' => node[id][:postgres][:username],
+    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    'PG_DATABASE' => node[id][:postgres][:dbname]
   )
-  action :create
+  directory basedir
+  serverurl 'AUTO'
+  action :enable
 end

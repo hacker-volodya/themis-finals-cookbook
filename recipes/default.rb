@@ -11,6 +11,7 @@ include_recipe "#{id}::prerequisite_nginx"
 include_recipe "#{id}::prerequisite_redis"
 include_recipe "#{id}::prerequisite_beanstalkd"
 include_recipe "#{id}::prerequisite_postgres"
+include_recipe "#{id}::prerequisite_supervisor"
 
 directory node[id][:basedir] do
   owner node[id][:user]
@@ -35,29 +36,6 @@ if node.chef_environment.start_with? 'development'
       user node[id][:user]
     end
   end
-end
-
-rbenv_gem 'god' do
-  ruby_version node[id][:ruby][:version]
-end
-
-god_basedir = ::File.join node[id][:basedir], 'god.d'
-
-directory god_basedir do
-  owner node[id][:user]
-  group node[id][:group]
-  mode 0755
-  recursive true
-  action :create
-end
-
-template "#{node[id][:basedir]}/god.conf" do
-  source 'god.conf.erb'
-  mode 0644
-  variables(
-    god_basedir: god_basedir,
-  )
-  action :create
 end
 
 logs_basedir = ::File.join node[id][:basedir], 'logs'
@@ -93,6 +71,16 @@ end
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
+
+supervisor_group node[id][:supervisor][:namespace] do
+  programs [
+    "#{node[id][:supervisor][:namespace]}.stream",
+    "#{node[id][:supervisor][:namespace]}.queue",
+    "#{node[id][:supervisor][:namespace]}.scheduler",
+    "#{node[id][:supervisor][:namespace]}.app"
+  ]
+  action :enable
+end
 
 template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
   source 'nginx.conf.erb'
