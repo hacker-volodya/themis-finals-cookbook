@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# Activate virtualenv
+. <%= @virtualenv_path %>/bin/activate
+# Launch python shell
+<%= @environment.map { |k, v| "#{k}=\"#{v}\""}.join ' ' %> sentry cleanup --days=0
+# Store return code
+RETVAL=$?
+# Deactivate virtualenv
+deactivate
+# Exit with return code
+exit $RETVAL

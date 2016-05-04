@@ -20,6 +20,8 @@ default[id][:beanstalkd][:listen][:port] = 11300
 default[id][:beanstalkd][:tube_namespace] = 'themis.finals'
 
 default[id][:supervisor][:namespace] = 'themis.finals'
+default[id][:supervisor][:listen][:address] = '0.0.0.0'
+default[id][:supervisor][:listen][:port] = 9001
 
 default[id][:basedir] = '/var/themis/finals'
 
@@ -38,5 +40,11 @@ default[id][:stream][:revision] = 'develop'
 default[id][:stream][:port_range_start] = 4000
 default[id][:stream][:processes] = 2
 default[id][:stream][:debug] = true
+
+default[id][:sentry][:postgres][:username] = 'sentry_user'
+default[id][:sentry][:postgres][:dbname] = 'sentry'
+default[id][:sentry][:redis][:db] = 2
+default[id][:sentry][:listen][:address] = '0.0.0.0'
+default[id][:sentry][:listen][:port] = 9000
 
 default[id][:post_scoreboard] = true

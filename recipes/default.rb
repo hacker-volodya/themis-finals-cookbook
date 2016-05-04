@@ -68,6 +68,7 @@ directory team_logos_dir do
   action :create
 end
 
+include_recipe "#{id}::sentry"
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
@@ -80,6 +81,20 @@ supervisor_group node[id][:supervisor][:namespace] do
     "#{node[id][:supervisor][:namespace]}.app"
   ]
   action :enable
+end
+
+cleanup_script = ::File.join node[id][:basedir], 'cleanup_logs'
+
+template cleanup_script do
+  source 'cleanup_logs.sh.erb'
+  owner node[id][:user]
+  group node[id][:group]
+  mode 0775
+  variables(
+    logs_basedir: logs_basedir,
+    checkers_basedir: checkers_basedir,
+    sentry_logs_basedir: ::File.join(node[id][:basedir], 'sentry', 'logs')
+  )
 end
 
 template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do

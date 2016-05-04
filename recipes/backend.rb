@@ -73,30 +73,28 @@ aws_credentials = (aws_data_bag_item.nil?) ? {} : aws_data_bag_item.to_hash.fetc
 
 post_scoreboard = node[id][:post_scoreboard] && aws_credentials.key?('access_key_id') && aws_credentials.key?('secret_access_key') && aws_credentials.key?('bucket') && aws_credentials.key?('region')
 
-if post_scoreboard
-  dotenv_file = ::File.join basedir, '.env'
+dotenv_file = ::File.join basedir, '.env'
 
-  template dotenv_file do
-    source 'dotenv.erb'
-    user node[id][:user]
-    group node[id][:group]
-    mode 0600
-    variables(
-      aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
-      aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
-      aws_bucket: aws_credentials.fetch('bucket', nil),
-      aws_region: aws_credentials.fetch('region', nil),
-      redis_host: node[id][:redis][:listen][:address],
-      redis_port: node[id][:redis][:listen][:port],
-      redis_db: node[id][:redis][:db],
-      pg_host: node[id][:postgres][:listen][:address],
-      pg_port: node[id][:postgres][:listen][:port],
-      pg_username: node[id][:postgres][:username],
-      pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
-      pg_database: node[id][:postgres][:dbname]
-    )
-    action :create
-  end
+template dotenv_file do
+  source 'dotenv.erb'
+  user node[id][:user]
+  group node[id][:group]
+  mode 0600
+  variables(
+    aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
+    aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
+    aws_bucket: aws_credentials.fetch('bucket', nil),
+    aws_region: aws_credentials.fetch('region', nil),
+    redis_host: node[id][:redis][:listen][:address],
+    redis_port: node[id][:redis][:listen][:port],
+    redis_db: node[id][:redis][:db],
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_database: node[id][:postgres][:dbname]
+  )
+  action :create
 end
 
 rbenv_root = node[:rbenv][:root_path]
