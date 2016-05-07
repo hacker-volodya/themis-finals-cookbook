@@ -81,6 +81,20 @@ template cleanup_script do
   )
 end
 
+archive_script = ::File.join node[id][:basedir], 'archive_logs'
+
+template archive_script do
+  source 'archive_logs.sh.erb'
+  owner node[id][:user]
+  group node[id][:group]
+  mode 0775
+  variables(
+    logs_basedir: logs_basedir,
+    checkers_basedir: checkers_basedir,
+    sentry_logs_basedir: ::File.join(node[id][:basedir], 'sentry', 'logs')
+  )
+end
+
 template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
   source 'nginx.conf.erb'
   mode 0644

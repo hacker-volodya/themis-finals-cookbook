@@ -72,6 +72,22 @@ postgresql_database_user node[id][:sentry][:postgres][:username] do
   action [:create, :grant]
 end
 
+dump_db_script = ::File.join node[id][:basedir], 'dump_sentry_db'
+
+template dump_db_script do
+  source 'dump_db.sh.erb'
+  owner node[id][:user]
+  group node[id][:group]
+  mode 0775
+  variables(
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:sentry][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:sentry][:postgres][:username]],
+    pg_dbname: node[id][:sentry][:postgres][:dbname]
+  )
+end
+
 conf_file = ::File.join basedir, 'sentry.conf.py'
 
 template conf_file do

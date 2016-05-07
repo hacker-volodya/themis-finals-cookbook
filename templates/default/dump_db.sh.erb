@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+PGPASSWORD="<%= @pg_password %>" pg_dump -h <%= @pg_host %> -p <%= @pg_port %> -U <%= @pg_username %> -d <%= @pg_dbname %>

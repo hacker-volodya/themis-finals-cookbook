@@ -97,6 +97,22 @@ template dotenv_file do
   action :create
 end
 
+dump_db_script = ::File.join node[id][:basedir], 'dump_main_db'
+
+template dump_db_script do
+  source 'dump_db.sh.erb'
+  owner node[id][:user]
+  group node[id][:group]
+  mode 0775
+  variables(
+    pg_host: node[id][:postgres][:listen][:address],
+    pg_port: node[id][:postgres][:listen][:port],
+    pg_username: node[id][:postgres][:username],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
+    pg_dbname: node[id][:postgres][:dbname]
+  )
+end
+
 rbenv_root = node[:rbenv][:root_path]
 logs_basedir = ::File.join node[id][:basedir], 'logs'
 
