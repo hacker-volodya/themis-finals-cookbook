@@ -12,6 +12,7 @@ include_recipe "#{id}::prerequisite_redis"
 include_recipe "#{id}::prerequisite_beanstalkd"
 include_recipe "#{id}::prerequisite_postgres"
 include_recipe "#{id}::prerequisite_supervisor"
+include_recipe "#{id}::prerequisite_ssh_keys"
 
 directory node[id][:basedir] do
   owner node[id][:user]
@@ -19,23 +20,6 @@ directory node[id][:basedir] do
   mode 0755
   recursive true
   action :create
-end
-
-if node.chef_environment.start_with? 'development'
-  ssh_data_bag_item = {}
-  begin
-    ssh_data_bag_item = data_bag_item('ssh', node.chef_environment)
-  rescue
-  end
-
-  ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
-
-  ssh_key_map.each do |key_type, key_contents|
-    ssh_user_private_key key_type do
-      key key_contents
-      user node[id][:user]
-    end
-  end
 end
 
 logs_basedir = ::File.join node[id][:basedir], 'logs'
