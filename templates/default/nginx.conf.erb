@@ -58,4 +58,8 @@ server {
     proxy_cache off;
     proxy_read_timeout 1h;
   }
+
+  location /visualization/ {
+    root <%= @visualization_basedir %>;
+  }
 }

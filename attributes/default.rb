@@ -26,20 +26,23 @@ default[id][:supervisor][:listen][:port] = 9001
 default[id][:basedir] = '/var/themis/finals'
 
 default[id][:backend][:github_repository] = 'aspyatkin/themis-finals-backend'
-default[id][:backend][:revision] = 'develop'
+default[id][:backend][:revision] = 'master'
 default[id][:backend][:debug] = true
 default[id][:backend][:queue][:processes] = 2
 default[id][:backend][:app][:processes] = 2
 default[id][:backend][:app][:port_range_start] = 3000
 
 default[id][:frontend][:github_repository] = 'aspyatkin/themis-finals-frontend'
-default[id][:frontend][:revision] = 'develop'
+default[id][:frontend][:revision] = 'master'
 
 default[id][:stream][:github_repository] = 'aspyatkin/themis-finals-stream'
-default[id][:stream][:revision] = 'develop'
+default[id][:stream][:revision] = 'master'
 default[id][:stream][:port_range_start] = 4000
 default[id][:stream][:processes] = 2
 default[id][:stream][:debug] = true
+
+default[id][:visualization][:github_repository] = 'VolgaCTF/rcc-2016-visualization'
+default[id][:visualization][:revision] = 'master'
 
 default[id][:sentry][:postgres][:username] = 'sentry_user'
 default[id][:sentry][:postgres][:dbname] = 'sentry'

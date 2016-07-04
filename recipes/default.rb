@@ -56,6 +56,7 @@ include_recipe "#{id}::sentry"
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
+include_recipe "#{id}::visualization"
 
 supervisor_group node[id][:supervisor][:namespace] do
   programs [
@@ -101,6 +102,7 @@ template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
   variables(
     logs_basedir: logs_basedir,
     frontend_basedir: ::File.join(node[id][:basedir], 'frontend'),
+    visualization_basedir: node[id][:basedir],
     backend_app_processes: node[id][:backend][:app][:processes],
     backend_app_port_range_start: node[id][:backend][:app][:port_range_start],
     stream_processes: node[id][:stream][:processes],
