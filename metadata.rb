@@ -4,7 +4,7 @@ version '1.1.7'
 
 recipe 'themis-finals', 'Installs and configures Themis Finals'
 depends 'latest-git', '~> 1.1.6'
-depends 'latest-nodejs', '~> 1.2.4'
+depends 'latest-nodejs', '~> 1.2.6'
 depends 'latest-redis', '~> 1.1.2'
 depends 'modern_nginx', '~> 1.2.5'
 depends 'ssh_known_hosts', '~> 2.0.0'

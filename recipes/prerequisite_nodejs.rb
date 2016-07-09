@@ -1,3 +1,3 @@
-node.default['latest-nodejs']['install'] = 'stable'
+node.default['latest-nodejs']['install'] = 'current'
 
 include_recipe 'latest-nodejs::default'

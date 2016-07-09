@@ -110,3 +110,13 @@ supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
   serverurl 'AUTO'
   action :enable
 end
+
+execute 'Build stream scripts' do
+  command 'npm run build'
+  cwd basedir
+  user node[id][:user]
+  group node[id][:group]
+  environment(
+    'HOME' => "/home/#{node[id][:user]}"
+  )
+end
