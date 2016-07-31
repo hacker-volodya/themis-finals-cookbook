@@ -28,7 +28,7 @@ end
 
 git2 basedir do
   url url_repository
-  branch node[id][:backend][:revision]
+  branch node[id][:stream][:revision]
   user node[id][:user]
   group node[id][:group]
   action :create
@@ -66,7 +66,7 @@ end
 logs_basedir = ::File.join node[id][:basedir], 'logs'
 
 supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
-  command ::File.join basedir, 'bin', 'app'
+  command 'node ./dist/server.js'
   process_name 'stream-%(process_num)s'
   numprocs node[id][:stream][:processes]
   numprocs_start 0

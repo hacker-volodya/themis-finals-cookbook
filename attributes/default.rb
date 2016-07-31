@@ -16,7 +16,7 @@ default[id][:redis][:listen][:port] = 6379
 default[id][:redis][:db] = 1
 
 default[id][:beanstalkd][:listen][:address] = '127.0.0.1'
-default[id][:beanstalkd][:listen][:port] = 11300
+default[id][:beanstalkd][:listen][:port] = 11_300
 default[id][:beanstalkd][:tube_namespace] = 'themis.finals'
 
 default[id][:supervisor][:namespace] = 'themis.finals'
@@ -26,7 +26,7 @@ default[id][:supervisor][:listen][:port] = 9001
 default[id][:basedir] = '/var/themis/finals'
 
 default[id][:backend][:github_repository] = 'aspyatkin/themis-finals-backend'
-default[id][:backend][:revision] = 'master'
+default[id][:backend][:revision] = 'develop'
 default[id][:backend][:debug] = true
 default[id][:backend][:queue][:processes] = 2
 default[id][:backend][:app][:processes] = 2
@@ -36,7 +36,7 @@ default[id][:frontend][:github_repository] = 'aspyatkin/themis-finals-frontend'
 default[id][:frontend][:revision] = 'master'
 
 default[id][:stream][:github_repository] = 'aspyatkin/themis-finals-stream'
-default[id][:stream][:revision] = 'master'
+default[id][:stream][:revision] = 'develop'
 default[id][:stream][:port_range_start] = 4000
 default[id][:stream][:processes] = 2
 default[id][:stream][:debug] = true

@@ -11,7 +11,8 @@ upstream stream {
 }
 
 server {
-  listen 80 default;
+  listen 80;
+  server_name <%= @server_name %>;
 
   access_log <%= @logs_basedir %>/nginx_access.log;
   error_log <%= @logs_basedir %>/nginx_error.log;

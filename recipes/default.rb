@@ -100,6 +100,7 @@ template "#{node[:nginx][:dir]}/sites-available/themis-finals.conf" do
   source 'nginx.conf.erb'
   mode 0644
   variables(
+    server_name: node[id]['fqdn'],
     logs_basedir: logs_basedir,
     frontend_basedir: ::File.join(node[id][:basedir], 'frontend'),
     visualization_basedir: node[id][:basedir],
