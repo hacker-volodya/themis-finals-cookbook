@@ -26,9 +26,9 @@ end
 virtualenv_path = ::File.join basedir, '.virtualenv'
 
 python_virtualenv virtualenv_path do
-  owner node[id][:user]
+  user node[id][:user]
   group node[id][:group]
-  interpreter node['python']['binary']
+  python '2'
   action :create
 end
 
@@ -42,11 +42,10 @@ cookbook_file requirements_file do
   action :create
 end
 
-python_pip requirements_file do
+pip_requirements requirements_file do
   user node[id][:user]
   group node[id][:group]
   virtualenv virtualenv_path
-  options '-r'
   action :install
 end
 

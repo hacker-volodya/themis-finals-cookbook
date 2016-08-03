@@ -12,7 +12,7 @@ include_recipe "#{id}::prerequisite_redis"
 include_recipe "#{id}::prerequisite_beanstalkd"
 include_recipe "#{id}::prerequisite_postgres"
 include_recipe "#{id}::prerequisite_supervisor"
-include_recipe "#{id}::prerequisite_ssh_keys"
+# include_recipe "#{id}::prerequisite_ssh_keys"
 
 directory node[id][:basedir] do
   owner node[id][:user]

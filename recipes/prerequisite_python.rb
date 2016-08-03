@@ -1,4 +1,3 @@
-include_recipe 'python::default'
+include_recipe 'poise-python::default'
 
-python_pip 'twine'
-python_pip 'wheel'
+python_package 'twine'

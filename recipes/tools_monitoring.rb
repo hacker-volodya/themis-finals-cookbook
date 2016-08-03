@@ -1,2 +1,3 @@
-python_pip 'glances'
+python_package 'glances'
+
 package 'htop'
