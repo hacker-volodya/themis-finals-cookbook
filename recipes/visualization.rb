@@ -1,11 +1,11 @@
 id = 'themis-finals'
 
-basedir = ::File.join node[id][:basedir], 'visualization'
-url_repository = "https://github.com/#{node[id][:visualization][:github_repository]}"
+basedir = ::File.join node[id]['basedir'], 'visualization'
+url_repository = "https://github.com/#{node[id]['visualization']['github_repository']}"
 
 directory basedir do
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0755
   recursive true
   action :create
@@ -21,16 +21,16 @@ if node.chef_environment.start_with? 'development'
   ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
 
   if ssh_key_map.size > 0
-    url_repository = "git@github.com:#{node[id][:visualization][:github_repository]}.git"
+    url_repository = "git@github.com:#{node[id]['visualization']['github_repository']}.git"
     ssh_known_hosts_entry 'github.com'
   end
 end
 
 git2 basedir do
   url url_repository
-  branch node[id][:visualization][:revision]
-  user node[id][:user]
-  group node[id][:group]
+  branch node[id]['visualization']['revision']
+  user node[id]['user']
+  group node[id]['group']
   action :create
 end
 
@@ -49,7 +49,7 @@ if node.chef_environment.start_with? 'development'
       value value
       scope 'local'
       path basedir
-      user node[id][:user]
+      user node[id]['user']
       action :set
     end
   end

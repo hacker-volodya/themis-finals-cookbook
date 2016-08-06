@@ -4,11 +4,11 @@ include_recipe 'libffi::default'
 
 id = 'themis-finals'
 
-basedir = ::File.join node[id][:basedir], 'sentry'
+basedir = ::File.join node[id]['basedir'], 'sentry'
 
 directory basedir do
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0755
   recursive true
   action :create
@@ -17,8 +17,8 @@ end
 logs_dir = ::File.join basedir, 'logs'
 
 directory logs_dir do
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0755
   action :create
 end
@@ -26,8 +26,8 @@ end
 virtualenv_path = ::File.join basedir, '.virtualenv'
 
 python_virtualenv virtualenv_path do
-  user node[id][:user]
-  group node[id][:group]
+  user node[id]['user']
+  group node[id]['group']
   python '2'
   action :create
 end
@@ -36,15 +36,15 @@ requirements_file = ::File.join basedir, 'requirements.txt'
 
 cookbook_file requirements_file do
   source 'requirements.txt'
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0644
   action :create
 end
 
 pip_requirements requirements_file do
-  user node[id][:user]
-  group node[id][:group]
+  user node[id]['user']
+  group node[id]['group']
   virtualenv virtualenv_path
   action :install
 end
@@ -52,38 +52,38 @@ end
 postgres_root_username = 'postgres'
 
 postgresql_connection_info = {
-  host: node[id][:postgres][:listen][:address],
-  port: node[id][:postgres][:listen][:port],
+  host: node[id]['postgres']['listen']['address'],
+  port: node[id]['postgres']['listen']['port'],
   username: postgres_root_username,
   password: data_bag_item('postgres', node.chef_environment)['credentials'][postgres_root_username]
 }
 
-postgresql_database node[id][:sentry][:postgres][:dbname] do
+postgresql_database node[id]['sentry']['postgres']['dbname'] do
   connection postgresql_connection_info
   action :create
 end
 
-postgresql_database_user node[id][:sentry][:postgres][:username] do
+postgresql_database_user node[id]['sentry']['postgres']['username'] do
   connection postgresql_connection_info
-  database_name node[id][:sentry][:postgres][:dbname]
-  password data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:sentry][:postgres][:username]]
+  database_name node[id]['sentry']['postgres']['dbname']
+  password data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['sentry']['postgres']['username']]
   privileges [:all]
   action [:create, :grant]
 end
 
-dump_db_script = ::File.join node[id][:basedir], 'dump_sentry_db'
+dump_db_script = ::File.join node[id]['basedir'], 'dump_sentry_db'
 
 template dump_db_script do
   source 'dump_db.sh.erb'
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0775
   variables(
-    pg_host: node[id][:postgres][:listen][:address],
-    pg_port: node[id][:postgres][:listen][:port],
-    pg_username: node[id][:sentry][:postgres][:username],
-    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:sentry][:postgres][:username]],
-    pg_dbname: node[id][:sentry][:postgres][:dbname]
+    pg_host: node[id]['postgres']['listen']['address'],
+    pg_port: node[id]['postgres']['listen']['port'],
+    pg_username: node[id]['sentry']['postgres']['username'],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['sentry']['postgres']['username']],
+    pg_dbname: node[id]['sentry']['postgres']['dbname']
   )
 end
 
@@ -91,19 +91,19 @@ conf_file = ::File.join basedir, 'sentry.conf.py'
 
 template conf_file do
   source 'sentry.conf.py.erb'
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   variables(
-    sentry_host: node[id][:sentry][:listen][:address],
-    sentry_port: node[id][:sentry][:listen][:port],
-    pg_host: node[id][:postgres][:listen][:address],
-    pg_port: node[id][:postgres][:listen][:port],
-    pg_name: node[id][:sentry][:postgres][:dbname],
-    pg_username: node[id][:sentry][:postgres][:username],
-    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:sentry][:postgres][:username]],
-    redis_host: node[id][:redis][:listen][:address],
-    redis_port: node[id][:redis][:listen][:port],
-    redis_db: node[id][:sentry][:redis][:db]
+    sentry_host: node[id]['sentry']['listen']['address'],
+    sentry_port: node[id]['sentry']['listen']['port'],
+    pg_host: node[id]['postgres']['listen']['address'],
+    pg_port: node[id]['postgres']['listen']['port'],
+    pg_name: node[id]['sentry']['postgres']['dbname'],
+    pg_username: node[id]['sentry']['postgres']['username'],
+    pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['sentry']['postgres']['username']],
+    redis_host: node[id]['redis']['listen']['address'],
+    redis_port: node[id]['redis']['listen']['port'],
+    redis_db: node[id]['sentry']['redis']['db']
   )
   mode 0644
 end
@@ -112,21 +112,21 @@ new_conf_file = ::File.join basedir, 'config.yml'
 
 template new_conf_file do
   source 'sentry.config.yml.erb'
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   variables(
     secret_key: data_bag_item('sentry', node.chef_environment)['secret_key'],
-    redis_host: node[id][:redis][:listen][:address],
-    redis_port: node[id][:redis][:listen][:port],
-    redis_db: node[id][:sentry][:redis][:db]
+    redis_host: node[id]['redis']['listen']['address'],
+    redis_port: node[id]['redis']['listen']['port'],
+    redis_db: node[id]['sentry']['redis']['db']
   )
 end
 
 execute 'Run Sentry database migration' do
   command "sentry upgrade --noinput"
   cwd basedir
-  user node[id][:user]
-  group node[id][:group]
+  user node[id]['user']
+  group node[id]['group']
   environment(
     'PATH' => "#{::File.join virtualenv_path, 'bin'}:#{ENV['PATH']}",
     'SENTRY_CONF' => basedir
@@ -134,7 +134,7 @@ execute 'Run Sentry database migration' do
   action :run
 end
 
-namespace = "#{node['themis-finals'][:supervisor][:namespace]}.sentry"
+namespace = "#{node['themis-finals']['supervisor']['namespace']}.sentry"
 
 supervisor_service "#{namespace}.web" do
   command "#{::File.join virtualenv_path, 'bin', 'sentry'} run web"
@@ -151,7 +151,7 @@ supervisor_service "#{namespace}.web" do
   stopwaitsecs 10
   stopasgroup false
   killasgroup false
-  user node[id][:user]
+  user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_dir, 'web-stdout.log'
   stdout_logfile_maxbytes '10MB'
@@ -187,7 +187,7 @@ supervisor_service "#{namespace}.celery_worker" do
   stopwaitsecs 10
   stopasgroup false
   killasgroup false
-  user node[id][:user]
+  user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_dir, 'celery_worker-stdout.log'
   stdout_logfile_maxbytes '10MB'
@@ -223,7 +223,7 @@ supervisor_service "#{namespace}.celery_beat" do
   stopwaitsecs 10
   stopasgroup false
   killasgroup false
-  user node[id][:user]
+  user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_dir, 'celery_beat-stdout.log'
   stdout_logfile_maxbytes '10MB'
@@ -253,12 +253,12 @@ supervisor_group namespace do
   action [:enable, :start]
 end
 
-cleanup_script = ::File.join node[id][:basedir], 'cleanup_sentry'
+cleanup_script = ::File.join node[id]['basedir'], 'cleanup_sentry'
 
 template cleanup_script do
   source 'cleanup_sentry.sh.erb'
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0775
   variables(
     virtualenv_path: virtualenv_path,

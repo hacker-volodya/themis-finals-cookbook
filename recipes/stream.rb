@@ -1,11 +1,11 @@
 id = 'themis-finals'
 
-basedir = ::File.join node[id][:basedir], 'stream'
-url_repository = "https://github.com/#{node[id][:stream][:github_repository]}"
+basedir = ::File.join node[id]['basedir'], 'stream'
+url_repository = "https://github.com/#{node[id]['stream']['github_repository']}"
 
 directory basedir do
-  owner node[id][:user]
-  group node[id][:group]
+  owner node[id]['user']
+  group node[id]['group']
   mode 0755
   recursive true
   action :create
@@ -21,16 +21,16 @@ if node.chef_environment.start_with? 'development'
   ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
 
   if ssh_key_map.size > 0
-    url_repository = "git@github.com:#{node[id][:stream][:github_repository]}.git"
+    url_repository = "git@github.com:#{node[id]['stream']['github_repository']}.git"
     ssh_known_hosts_entry 'github.com'
   end
 end
 
 git2 basedir do
   url url_repository
-  branch node[id][:stream][:revision]
-  user node[id][:user]
-  group node[id][:group]
+  branch node[id]['stream']['revision']
+  user node[id]['user']
+  group node[id]['group']
   action :create
 end
 
@@ -49,7 +49,7 @@ if node.chef_environment.start_with? 'development'
       value value
       scope 'local'
       path basedir
-      user node[id][:user]
+      user node[id]['user']
       action :set
     end
   end
@@ -59,16 +59,16 @@ nodejs_npm "Install dependencies at #{basedir}" do
   package '.'
   path basedir
   json true
-  user node[id][:user]
-  group node[id][:group]
+  user node[id]['user']
+  group node[id]['group']
 end
 
-logs_basedir = ::File.join node[id][:basedir], 'logs'
+logs_basedir = ::File.join node[id]['basedir'], 'logs'
 
-supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
+supervisor_service "#{node[id]['supervisor']['namespace']}.master.stream" do
   command 'node ./dist/server.js'
   process_name 'stream-%(process_num)s'
-  numprocs node[id][:stream][:processes]
+  numprocs node[id]['stream']['processes']
   numprocs_start 0
   priority 300
   autostart false
@@ -80,7 +80,7 @@ supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
   stopwaitsecs 10
   stopasgroup false
   killasgroup false
-  user node[id][:user]
+  user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_basedir, 'stream-%(process_num)s-stdout.log'
   stdout_logfile_maxbytes '10MB'
@@ -94,17 +94,17 @@ supervisor_service "#{node[id][:supervisor][:namespace]}.stream" do
   stderr_events_enabled false
   environment(
     'HOST' => '127.0.0.1',
-    'PORT_RANGE_START' => node[id][:stream][:port_range_start],
+    'PORT_RANGE_START' => node[id]['stream']['port_range_start'],
     'APP_INSTANCE' => '%(process_num)s',
-    'LOG_LEVEL' => node[id][:stream][:debug] ? 'debug' : 'info',
-    'REDIS_HOST' => node[id][:redis][:listen][:address],
-    'REDIS_PORT' => node[id][:redis][:listen][:port],
-    'REDIS_DB' => node[id][:redis][:db],
-    'PG_HOST' => node[id][:postgres][:listen][:address],
-    'PG_PORT' => node[id][:postgres][:listen][:port],
-    'PG_USERNAME' => node[id][:postgres][:username],
-    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id][:postgres][:username]],
-    'PG_DATABASE' => node[id][:postgres][:dbname]
+    'LOG_LEVEL' => node[id]['stream']['debug'] ? 'debug' : 'info',
+    'REDIS_HOST' => node[id]['redis']['listen']['address'],
+    'REDIS_PORT' => node[id]['redis']['listen']['port'],
+    'REDIS_DB' => node[id]['redis']['db'],
+    'PG_HOST' => node[id]['postgres']['listen']['address'],
+    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'PG_USERNAME' => node[id]['postgres']['username'],
+    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
+    'PG_DATABASE' => node[id]['postgres']['dbname']
   )
   directory basedir
   serverurl 'AUTO'
@@ -114,9 +114,9 @@ end
 execute 'Build stream scripts' do
   command 'npm run build'
   cwd basedir
-  user node[id][:user]
-  group node[id][:group]
+  user node[id]['user']
+  group node[id]['group']
   environment(
-    'HOME' => "/home/#{node[id][:user]}"
+    'HOME' => "/home/#{node[id]['user']}"
   )
 end
