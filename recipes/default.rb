@@ -64,6 +64,7 @@ supervisor_group namespace do
   programs [
     "#{namespace}.stream",
     "#{namespace}.queue",
+    "#{namespace}.queue2",
     "#{namespace}.scheduler",
     "#{namespace}.app"
   ]

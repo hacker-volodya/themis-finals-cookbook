@@ -162,7 +162,67 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
-    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn']
+    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
+    'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
+    'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
+  )
+  directory basedir
+  serverurl 'AUTO'
+  action :enable
+end
+
+supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue2" do
+  command 'sh script/queue2'
+  process_name 'queue2-%(process_num)s'
+  numprocs node[id]['backend']['queue']['processes']
+  numprocs_start 0
+  priority 300
+  autostart false
+  autorestart true
+  startsecs 1
+  startretries 3
+  exitcodes [0, 2]
+  stopsignal :INT
+  stopwaitsecs 10
+  stopasgroup true
+  killasgroup true
+  user node[id]['user']
+  redirect_stderr false
+  stdout_logfile ::File.join logs_basedir, 'queue2-%(process_num)s-stdout.log'
+  stdout_logfile_maxbytes '10MB'
+  stdout_logfile_backups 10
+  stdout_capture_maxbytes '0'
+  stdout_events_enabled false
+  stderr_logfile ::File.join logs_basedir, 'queue2-%(process_num)s-stderr.log'
+  stderr_logfile_maxbytes '10MB'
+  stderr_logfile_backups 10
+  stderr_capture_maxbytes '0'
+  stderr_events_enabled false
+  environment(
+    'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
+    'CTFTIME_SCOREBOARD' => post_scoreboard,
+    'AWS_ACCESS_KEY_ID' => aws_credentials.fetch('access_key_id', nil),
+    'AWS_SECRET_ACCESS_KEY' => aws_credentials.fetch('secret_access_key', nil),
+    'AWS_REGION' => aws_credentials.fetch('region', nil),
+    'AWS_BUCKET' => aws_credentials.fetch('bucket', nil),
+    'INSTANCE' => '%(process_num)s',
+    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
+    'STDOUT_SYNC' => node[id]['backend']['debug'],
+    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['listen']['address']}:#{node[id]['beanstalkd']['listen']['port']}",
+    'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
+    'REDIS_HOST' => node[id]['redis']['listen']['address'],
+    'REDIS_PORT' => node[id]['redis']['listen']['port'],
+    'REDIS_DB' => node[id]['redis']['db'],
+    'PG_HOST' => node[id]['postgres']['listen']['address'],
+    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'PG_USERNAME' => node[id]['postgres']['username'],
+    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
+    'PG_DATABASE' => node[id]['postgres']['dbname'],
+    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
+    'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
+    'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
   )
   directory basedir
   serverurl 'AUTO'
@@ -219,7 +279,7 @@ end
 team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
 
 supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
-  command "#{rbenv_root}/shims/bundle exec ruby backend.rb"
+  command 'sh script/server'
   process_name 'app-%(process_num)s'
   numprocs node[id]['backend']['app']['processes']
   numprocs_start 0
@@ -231,8 +291,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
   exitcodes [0, 2]
   stopsignal :INT
   stopwaitsecs 10
-  stopasgroup false
-  killasgroup false
+  stopasgroup true
+  killasgroup true
   user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_basedir, 'app-%(process_num)s-stdout.log'
@@ -246,10 +306,11 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
   stderr_capture_maxbytes '0'
   stderr_events_enabled false
   environment(
+    'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'TEAM_LOGOS_DIR' => team_logos_dir,
     'HOST' => '127.0.0.1',
-    'PORT_RANGE_START' => node[id]['backend']['app']['port_range_start'],
-    'APP_INSTANCE' => '%(process_num)s',
+    'PORT' => node[id]['backend']['app']['port_range_start'],
+    'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
     'RACK_ENV' => node.chef_environment,
@@ -263,7 +324,10 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
-    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn']
+    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
+    'THEMIS_FINALS_CHECKER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['checker'],
+    'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
   )
   directory basedir
   serverurl 'AUTO'

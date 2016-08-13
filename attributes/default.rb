@@ -51,3 +51,6 @@ default[id]['sentry']['listen']['address'] = '0.0.0.0'
 default[id]['sentry']['listen']['port'] = 9000
 
 default[id]['post_scoreboard'] = true
+
+default[id]['key_nonce_size'] = 16
+default[id]['auth_token_header'] = 'X-Themis-Finals-Auth-Token'
