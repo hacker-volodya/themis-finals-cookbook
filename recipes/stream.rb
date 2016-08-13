@@ -94,17 +94,17 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.stream" do
   stderr_events_enabled false
   environment(
     'HOST' => '127.0.0.1',
-    'PORT_RANGE_START' => node[id]['stream']['port_range_start'],
-    'APP_INSTANCE' => '%(process_num)s',
+    'PORT' => node[id]['stream']['port_range_start'],
+    'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['stream']['debug'] ? 'debug' : 'info',
-    'REDIS_HOST' => node[id]['redis']['listen']['address'],
-    'REDIS_PORT' => node[id]['redis']['listen']['port'],
-    'REDIS_DB' => node[id]['redis']['db'],
-    'PG_HOST' => node[id]['postgres']['listen']['address'],
-    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'REDIS_HOST' => node[id]['redis']['host'],
+    'REDIS_PORT' => node[id]['redis']['port'],
+    'PG_HOST' => node[id]['postgres']['host'],
+    'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
-    'PG_DATABASE' => node[id]['postgres']['dbname']
+    'PG_DATABASE' => node[id]['postgres']['dbname'],
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db']
   )
   directory basedir
   serverurl 'AUTO'

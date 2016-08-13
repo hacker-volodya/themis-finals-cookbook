@@ -28,7 +28,7 @@ end
 
 git2 basedir do
   url url_repository
-  branch node[id]['backend']['revision']
+  branch node[id]['frontend']['revision']
   user node[id]['user']
   group node[id]['group']
   action :create

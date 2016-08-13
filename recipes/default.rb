@@ -64,9 +64,9 @@ supervisor_group namespace do
   programs [
     "#{namespace}.stream",
     "#{namespace}.queue",
-    "#{namespace}.queue2",
+    "#{namespace}.beanstalk",
     "#{namespace}.scheduler",
-    "#{namespace}.app"
+    "#{namespace}.server"
   ]
   action :enable
 end
@@ -107,8 +107,9 @@ template "#{node['nginx']['dir']}/sites-available/themis-finals.conf" do
     logs_basedir: logs_basedir,
     frontend_basedir: ::File.join(node[id]['basedir'], 'frontend'),
     visualization_basedir: node[id]['basedir'],
-    backend_app_processes: node[id]['backend']['app']['processes'],
-    backend_app_port_range_start: node[id]['backend']['app']['port_range_start'],
+    backend_server_processes: node[id]['backend']['server']['processes'],
+    backend_server_port_range_start: \
+      node[id]['backend']['server']['port_range_start'],
     stream_processes: node[id]['stream']['processes'],
     stream_port_range_start: node[id]['stream']['port_range_start']
   )

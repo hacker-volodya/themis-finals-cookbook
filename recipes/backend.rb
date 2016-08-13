@@ -85,14 +85,15 @@ template dotenv_file do
     aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
     aws_bucket: aws_credentials.fetch('bucket', nil),
     aws_region: aws_credentials.fetch('region', nil),
-    redis_host: node[id]['redis']['listen']['address'],
-    redis_port: node[id]['redis']['listen']['port'],
-    redis_db: node[id]['redis']['db'],
-    pg_host: node[id]['postgres']['listen']['address'],
-    pg_port: node[id]['postgres']['listen']['port'],
+    redis_host: node[id]['redis']['host'],
+    redis_port: node[id]['redis']['port'],
+    pg_host: node[id]['postgres']['host'],
+    pg_port: node[id]['postgres']['port'],
     pg_username: node[id]['postgres']['username'],
     pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
-    pg_database: node[id]['postgres']['dbname']
+    pg_database: node[id]['postgres']['dbname'],
+    stream_redis_db: node[id]['stream']['redis_db'],
+    queue_redis_db: node[id]['backend']['queue']['redis_db']
   )
   action :create
 end
@@ -105,19 +106,76 @@ template dump_db_script do
   group node[id]['group']
   mode 0775
   variables(
-    pg_host: node[id]['postgres']['listen']['address'],
-    pg_port: node[id]['postgres']['listen']['port'],
+    pg_host: node[id]['postgres']['host'],
+    pg_port: node[id]['postgres']['port'],
     pg_username: node[id]['postgres']['username'],
     pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     pg_dbname: node[id]['postgres']['dbname']
   )
 end
 
-rbenv_root = node['rbenv']['root_path']
 logs_basedir = ::File.join node[id]['basedir'], 'logs'
 
+supervisor_service "#{node[id]['supervisor']['namespace']}.master.beanstalk" do
+  command 'sh script/beanstalk'
+  process_name 'beanstalk-%(process_num)s'
+  numprocs node[id]['backend']['beanstalk']['processes']
+  numprocs_start 0
+  priority 300
+  autostart false
+  autorestart true
+  startsecs 1
+  startretries 3
+  exitcodes [0, 2]
+  stopsignal :INT
+  stopwaitsecs 10
+  stopasgroup true
+  killasgroup true
+  user node[id]['user']
+  redirect_stderr false
+  stdout_logfile ::File.join logs_basedir, 'beanstalk-%(process_num)s-stdout.log'
+  stdout_logfile_maxbytes '10MB'
+  stdout_logfile_backups 10
+  stdout_capture_maxbytes '0'
+  stdout_events_enabled false
+  stderr_logfile ::File.join logs_basedir, 'beanstalk-%(process_num)s-stderr.log'
+  stderr_logfile_maxbytes '10MB'
+  stderr_logfile_backups 10
+  stderr_capture_maxbytes '0'
+  stderr_events_enabled false
+  environment(
+    'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
+    'CTFTIME_SCOREBOARD' => post_scoreboard,
+    'AWS_ACCESS_KEY_ID' => aws_credentials.fetch('access_key_id', nil),
+    'AWS_SECRET_ACCESS_KEY' => aws_credentials.fetch('secret_access_key', nil),
+    'AWS_REGION' => aws_credentials.fetch('region', nil),
+    'AWS_BUCKET' => aws_credentials.fetch('bucket', nil),
+    'APP_INSTANCE' => '%(process_num)s',
+    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
+    'STDOUT_SYNC' => node[id]['backend']['debug'],
+    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['host']}:#{node[id]['beanstalkd']['port']}",
+    'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
+    'REDIS_HOST' => node[id]['redis']['host'],
+    'REDIS_PORT' => node[id]['redis']['port'],
+    'PG_HOST' => node[id]['postgres']['host'],
+    'PG_PORT' => node[id]['postgres']['port'],
+    'PG_USERNAME' => node[id]['postgres']['username'],
+    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
+    'PG_DATABASE' => node[id]['postgres']['dbname'],
+    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
+    'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
+    'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
+  )
+  directory basedir
+  serverurl 'AUTO'
+  action :enable
+end
+
 supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
-  command "#{rbenv_root}/shims/bundle exec ruby queue.rb"
+  command 'sh script/queue'
   process_name 'queue-%(process_num)s'
   numprocs node[id]['backend']['queue']['processes']
   numprocs_start 0
@@ -129,8 +187,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
   exitcodes [0, 2]
   stopsignal :INT
   stopwaitsecs 10
-  stopasgroup false
-  killasgroup false
+  stopasgroup true
+  killasgroup true
   user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_basedir, 'queue-%(process_num)s-stdout.log'
@@ -144,62 +202,6 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
   stderr_capture_maxbytes '0'
   stderr_events_enabled false
   environment(
-    'CTFTIME_SCOREBOARD' => post_scoreboard,
-    'AWS_ACCESS_KEY_ID' => aws_credentials.fetch('access_key_id', nil),
-    'AWS_SECRET_ACCESS_KEY' => aws_credentials.fetch('secret_access_key', nil),
-    'AWS_REGION' => aws_credentials.fetch('region', nil),
-    'AWS_BUCKET' => aws_credentials.fetch('bucket', nil),
-    'APP_INSTANCE' => '%(process_num)s',
-    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
-    'STDOUT_SYNC' => node[id]['backend']['debug'],
-    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['listen']['address']}:#{node[id]['beanstalkd']['listen']['port']}",
-    'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
-    'REDIS_HOST' => node[id]['redis']['listen']['address'],
-    'REDIS_PORT' => node[id]['redis']['listen']['port'],
-    'REDIS_DB' => node[id]['redis']['db'],
-    'PG_HOST' => node[id]['postgres']['listen']['address'],
-    'PG_PORT' => node[id]['postgres']['listen']['port'],
-    'PG_USERNAME' => node[id]['postgres']['username'],
-    'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
-    'PG_DATABASE' => node[id]['postgres']['dbname'],
-    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
-    'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
-    'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
-    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
-  )
-  directory basedir
-  serverurl 'AUTO'
-  action :enable
-end
-
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue2" do
-  command 'sh script/queue2'
-  process_name 'queue2-%(process_num)s'
-  numprocs node[id]['backend']['queue']['processes']
-  numprocs_start 0
-  priority 300
-  autostart false
-  autorestart true
-  startsecs 1
-  startretries 3
-  exitcodes [0, 2]
-  stopsignal :INT
-  stopwaitsecs 10
-  stopasgroup true
-  killasgroup true
-  user node[id]['user']
-  redirect_stderr false
-  stdout_logfile ::File.join logs_basedir, 'queue2-%(process_num)s-stdout.log'
-  stdout_logfile_maxbytes '10MB'
-  stdout_logfile_backups 10
-  stdout_capture_maxbytes '0'
-  stdout_events_enabled false
-  stderr_logfile ::File.join logs_basedir, 'queue2-%(process_num)s-stderr.log'
-  stderr_logfile_maxbytes '10MB'
-  stderr_logfile_backups 10
-  stderr_capture_maxbytes '0'
-  stderr_events_enabled false
-  environment(
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'CTFTIME_SCOREBOARD' => post_scoreboard,
     'AWS_ACCESS_KEY_ID' => aws_credentials.fetch('access_key_id', nil),
@@ -209,20 +211,21 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue2" do
     'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
-    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['listen']['address']}:#{node[id]['beanstalkd']['listen']['port']}",
+    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['host']}:#{node[id]['beanstalkd']['port']}",
     'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
-    'REDIS_HOST' => node[id]['redis']['listen']['address'],
-    'REDIS_PORT' => node[id]['redis']['listen']['port'],
-    'REDIS_DB' => node[id]['redis']['db'],
-    'PG_HOST' => node[id]['postgres']['listen']['address'],
-    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'REDIS_HOST' => node[id]['redis']['host'],
+    'REDIS_PORT' => node[id]['redis']['port'],
+    'PG_HOST' => node[id]['postgres']['host'],
+    'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
     'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
     'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
-    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
   )
   directory basedir
   serverurl 'AUTO'
@@ -230,7 +233,7 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue2" do
 end
 
 supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
-  command "#{rbenv_root}/shims/bundle exec ruby scheduler.rb"
+  command 'sh script/scheduler'
   process_name 'scheduler'
   numprocs 1
   numprocs_start 0
@@ -242,8 +245,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
   exitcodes [0, 2]
   stopsignal :INT
   stopwaitsecs 10
-  stopasgroup false
-  killasgroup false
+  stopasgroup true
+  killasgroup true
   user node[id]['user']
   redirect_stderr false
   stdout_logfile ::File.join logs_basedir, 'scheduler-stdout.log'
@@ -257,19 +260,21 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
   stderr_capture_maxbytes '0'
   stderr_events_enabled false
   environment(
+    'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
-    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['listen']['address']}:#{node[id]['beanstalkd']['listen']['port']}",
+    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['host']}:#{node[id]['beanstalkd']['port']}",
     'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
-    'REDIS_HOST' => node[id]['redis']['listen']['address'],
-    'REDIS_PORT' => node[id]['redis']['listen']['port'],
-    'REDIS_DB' => node[id]['redis']['db'],
-    'PG_HOST' => node[id]['postgres']['listen']['address'],
-    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'REDIS_HOST' => node[id]['redis']['host'],
+    'REDIS_PORT' => node[id]['redis']['port'],
+    'PG_HOST' => node[id]['postgres']['host'],
+    'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
-    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn']
+    'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
   )
   directory basedir
   serverurl 'AUTO'
@@ -278,10 +283,10 @@ end
 
 team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
 
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
+supervisor_service "#{node[id]['supervisor']['namespace']}.master.server" do
   command 'sh script/server'
-  process_name 'app-%(process_num)s'
-  numprocs node[id]['backend']['app']['processes']
+  process_name 'server-%(process_num)s'
+  numprocs node[id]['backend']['server']['processes']
   numprocs_start 0
   priority 300
   autostart false
@@ -295,12 +300,12 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
   killasgroup true
   user node[id]['user']
   redirect_stderr false
-  stdout_logfile ::File.join logs_basedir, 'app-%(process_num)s-stdout.log'
+  stdout_logfile ::File.join logs_basedir, 'server-%(process_num)s-stdout.log'
   stdout_logfile_maxbytes '10MB'
   stdout_logfile_backups 10
   stdout_capture_maxbytes '0'
   stdout_events_enabled false
-  stderr_logfile ::File.join logs_basedir, 'app-%(process_num)s-stderr.log'
+  stderr_logfile ::File.join logs_basedir, 'server-%(process_num)s-stderr.log'
   stderr_logfile_maxbytes '10MB'
   stderr_logfile_backups 10
   stderr_capture_maxbytes '0'
@@ -309,25 +314,26 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.app" do
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'TEAM_LOGOS_DIR' => team_logos_dir,
     'HOST' => '127.0.0.1',
-    'PORT' => node[id]['backend']['app']['port_range_start'],
+    'PORT' => node[id]['backend']['server']['port_range_start'],
     'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
     'RACK_ENV' => node.chef_environment,
-    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['listen']['address']}:#{node[id]['beanstalkd']['listen']['port']}",
+    'BEANSTALKD_URI' => "#{node[id]['beanstalkd']['host']}:#{node[id]['beanstalkd']['port']}",
     'BEANSTALKD_TUBE_NAMESPACE' => node[id]['beanstalkd']['tube_namespace'],
-    'REDIS_HOST' => node[id]['redis']['listen']['address'],
-    'REDIS_PORT' => node[id]['redis']['listen']['port'],
-    'REDIS_DB' => node[id]['redis']['db'],
-    'PG_HOST' => node[id]['postgres']['listen']['address'],
-    'PG_PORT' => node[id]['postgres']['listen']['port'],
+    'REDIS_HOST' => node[id]['redis']['host'],
+    'REDIS_PORT' => node[id]['redis']['port'],
+    'PG_HOST' => node[id]['postgres']['host'],
+    'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
     'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
     'THEMIS_FINALS_CHECKER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['checker'],
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
-    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header']
+    'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
   )
   directory basedir
   serverurl 'AUTO'
