@@ -93,7 +93,8 @@ template dotenv_file do
     pg_password: data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     pg_database: node[id]['postgres']['dbname'],
     stream_redis_db: node[id]['stream']['redis_db'],
-    queue_redis_db: node[id]['backend']['queue']['redis_db']
+    queue_redis_db: node[id]['backend']['queue']['redis_db'],
+    stream_redis_channel_namespace: node[id]['stream']['redis_channel_namespace']
   )
   action :create
 end
@@ -167,7 +168,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.beanstalk" do
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
     'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
     'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
-    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db'],
+    'THEMIS_FINALS_STREAM_REDIS_CHANNEL_NAMESPACE' => node[id]['stream']['redis_channel_namespace']
   )
   directory basedir
   serverurl 'AUTO'
@@ -225,7 +227,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
     'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
     'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
-    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db'],
+    'THEMIS_FINALS_STREAM_REDIS_CHANNEL_NAMESPACE' => node[id]['stream']['redis_channel_namespace']
   )
   directory basedir
   serverurl 'AUTO'
@@ -274,7 +277,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
     'PG_DATABASE' => node[id]['postgres']['dbname'],
     'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
     'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
-    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db'],
+    'THEMIS_FINALS_STREAM_REDIS_CHANNEL_NAMESPACE' => node[id]['stream']['redis_channel_namespace']
   )
   directory basedir
   serverurl 'AUTO'
@@ -333,7 +337,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.server" do
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
     'THEMIS_FINALS_AUTH_TOKEN_HEADER' => node[id]['auth_token_header'],
     'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
-    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db']
+    'THEMIS_FINALS_QUEUE_REDIS_DB' => node[id]['backend']['queue']['redis_db'],
+    'THEMIS_FINALS_STREAM_REDIS_CHANNEL_NAMESPACE' => node[id]['stream']['redis_channel_namespace']
   )
   directory basedir
   serverurl 'AUTO'

@@ -104,7 +104,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.stream" do
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
-    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db']
+    'THEMIS_FINALS_STREAM_REDIS_DB' => node[id]['stream']['redis_db'],
+    'THEMIS_FINALS_STREAM_REDIS_CHANNEL_NAMESPACE' => node[id]['stream']['redis_channel_namespace']
   )
   directory basedir
   serverurl 'AUTO'

@@ -64,7 +64,7 @@ nodejs_npm "Install dependencies at #{basedir}" do
 end
 
 execute "Copy customization file at #{basedir}" do
-  command 'cp customize.js.example customize.js'
+  command 'cp customize.example.js customize.js'
   cwd basedir
   user node[id]['user']
   group node[id]['group']

@@ -39,6 +39,7 @@ default[id]['frontend']['revision'] = 'master'
 default[id]['stream']['github_repository'] = 'aspyatkin/themis-finals-stream'
 default[id]['stream']['revision'] = 'master'
 default[id]['stream']['redis_db'] = 1
+default[id]['stream']['redis_channel_namespace'] = 'themis.finals'
 default[id]['stream']['port_range_start'] = 4000
 default[id]['stream']['processes'] = 2
 default[id]['stream']['debug'] = true
