@@ -3,7 +3,8 @@ id = 'themis-finals'
 default[id]['user'] = 'vagrant'
 default[id]['group'] = 'vagrant'
 
-default[id]['ruby']['version'] = '2.3.0'
+default[id]['ruby']['version'] = '2.3.1'
+default[id]['bundler_version'] = '1.12.5'
 
 default[id]['postgres']['version'] = '9.5'
 default[id]['postgres']['dbname'] = 'themis-finals'

@@ -32,16 +32,6 @@ directory logs_basedir do
   action :create
 end
 
-checkers_basedir = ::File.join node[id]['basedir'], 'checkers'
-
-directory checkers_basedir do
-  owner node[id]['user']
-  group node[id]['group']
-  mode 0755
-  recursive true
-  action :create
-end
-
 team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
 
 directory team_logos_dir do
@@ -56,7 +46,7 @@ end
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
-include_recipe "#{id}::visualization"
+# include_recipe "#{id}::visualization"
 
 namespace = "#{node[id]['supervisor']['namespace']}.master"
 
@@ -64,7 +54,7 @@ supervisor_group namespace do
   programs [
     "#{namespace}.stream",
     "#{namespace}.queue",
-    "#{namespace}.beanstalk",
+    # "#{namespace}.beanstalk",
     "#{namespace}.scheduler",
     "#{namespace}.server"
   ]
@@ -80,7 +70,6 @@ template cleanup_script do
   mode 0775
   variables(
     logs_basedir: logs_basedir,
-    checkers_basedir: checkers_basedir,
     sentry_logs_basedir: ::File.join(node[id]['basedir'], 'sentry', 'logs')
   )
 end
@@ -94,7 +83,6 @@ template archive_script do
   mode 0775
   variables(
     logs_basedir: logs_basedir,
-    checkers_basedir: checkers_basedir,
     sentry_logs_basedir: ::File.join(node[id]['basedir'], 'sentry', 'logs')
   )
 end

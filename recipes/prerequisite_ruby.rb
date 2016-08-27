@@ -17,5 +17,5 @@ end
 
 rbenv_gem 'bundler' do
   ruby_version node[id]['ruby']['version']
-  version '1.11.2'
+  version node[id]['bundler_version']
 end
