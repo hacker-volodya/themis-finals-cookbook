@@ -15,10 +15,6 @@ default[id]['postgres']['port'] = 5432
 default[id]['redis']['host'] = '127.0.0.1'
 default[id]['redis']['port'] = 6379
 
-default[id]['beanstalkd']['host'] = '127.0.0.1'
-default[id]['beanstalkd']['port'] = 11_300
-default[id]['beanstalkd']['tube_namespace'] = 'themis.finals'
-
 default[id]['supervisor']['namespace'] = 'themis.finals'
 default[id]['supervisor']['host'] = '0.0.0.0'
 default[id]['supervisor']['port'] = 9001
@@ -28,7 +24,6 @@ default[id]['basedir'] = '/var/themis/finals'
 default[id]['backend']['github_repository'] = 'aspyatkin/themis-finals-backend'
 default[id]['backend']['revision'] = 'master'
 default[id]['backend']['debug'] = true
-default[id]['backend']['beanstalk']['processes'] = 2
 default[id]['backend']['queue']['redis_db'] = 2
 default[id]['backend']['queue']['processes'] = 2
 default[id]['backend']['server']['processes'] = 2
