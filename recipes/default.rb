@@ -2,15 +2,14 @@ id = 'themis-finals'
 
 include_recipe "#{id}::prerequisite_ntp"
 
-include_recipe "#{id}::prerequisite_git"
-include_recipe "#{id}::prerequisite_python"
+include_recipe 'latest-git::default'
 include_recipe "#{id}::prerequisite_ruby"
 include_recipe "#{id}::prerequisite_nodejs"
 
 include_recipe "#{id}::prerequisite_nginx"
-include_recipe "#{id}::prerequisite_redis"
+include_recipe 'latest-redis::default'
 include_recipe "#{id}::prerequisite_postgres"
-include_recipe "#{id}::prerequisite_supervisor"
+include_recipe 'supervisor::default'
 
 directory node[id]['basedir'] do
   owner node[id]['user']
@@ -46,7 +45,7 @@ include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
 # include_recipe "#{id}::visualization"
 
-namespace = "#{node[id]['supervisor']['namespace']}.master"
+namespace = "#{node[id]['supervisor_namespace']}.master"
 
 supervisor_group namespace do
   programs [

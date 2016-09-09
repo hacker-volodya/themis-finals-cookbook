@@ -12,18 +12,9 @@ directory basedir do
 end
 
 if node.chef_environment.start_with? 'development'
-  ssh_data_bag_item = nil
-  begin
-    ssh_data_bag_item = data_bag_item('ssh', node.chef_environment)
-  rescue
-  end
-
-  ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
-
-  if ssh_key_map.size > 0
-    url_repository = "git@github.com:#{node[id]['stream']['github_repository']}.git"
-    ssh_known_hosts_entry 'github.com'
-  end
+  ssh_private_key node[id]['user']
+  ssh_known_hosts_entry 'github.com'
+  url_repository = "git@github.com:#{node[id]['stream']['github_repository']}.git"
 end
 
 git2 basedir do
@@ -65,7 +56,7 @@ end
 
 logs_basedir = ::File.join node[id]['basedir'], 'logs'
 
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.stream" do
+supervisor_service "#{node[id]['supervisor_namespace']}.master.stream" do
   command 'node ./dist/server.js'
   process_name 'stream-%(process_num)s'
   numprocs node[id]['stream']['processes']
@@ -97,8 +88,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.stream" do
     'PORT' => node[id]['stream']['port_range_start'],
     'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['stream']['debug'] ? 'debug' : 'info',
-    'REDIS_HOST' => node[id]['redis']['host'],
-    'REDIS_PORT' => node[id]['redis']['port'],
+    'REDIS_HOST' => node['latest-redis']['listen']['address'],
+    'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
     'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],

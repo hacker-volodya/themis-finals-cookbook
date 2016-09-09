@@ -12,18 +12,9 @@ directory basedir do
 end
 
 if node.chef_environment.start_with? 'development'
-  ssh_data_bag_item = nil
-  begin
-    ssh_data_bag_item = data_bag_item('ssh', node.chef_environment)
-  rescue
-  end
-
-  ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
-
-  if ssh_key_map.size > 0
-    url_repository = "git@github.com:#{node[id]['backend']['github_repository']}.git"
-    ssh_known_hosts_entry 'github.com'
-  end
+  ssh_private_key node[id]['user']
+  ssh_known_hosts_entry 'github.com'
+  url_repository = "git@github.com:#{node[id]['backend']['github_repository']}.git"
 end
 
 git2 basedir do
@@ -71,16 +62,6 @@ execute "Copy customization file at #{basedir}" do
   not_if "test -e #{basedir}/config.rb"
 end
 
-aws_data_bag_item = nil
-begin
-  aws_data_bag_item = data_bag_item('aws', node.chef_environment)
-rescue
-end
-
-aws_credentials = (aws_data_bag_item.nil?) ? {} : aws_data_bag_item.to_hash.fetch('credentials', {})
-
-post_scoreboard = node[id]['post_scoreboard'] && aws_credentials.key?('access_key_id') && aws_credentials.key?('secret_access_key') && aws_credentials.key?('bucket') && aws_credentials.key?('region')
-
 dotenv_file = ::File.join basedir, '.env'
 
 template dotenv_file do
@@ -89,12 +70,8 @@ template dotenv_file do
   group node[id]['group']
   mode 0600
   variables(
-    aws_access_key_id: aws_credentials.fetch('access_key_id', nil),
-    aws_secret_access_key: aws_credentials.fetch('secret_access_key', nil),
-    aws_bucket: aws_credentials.fetch('bucket', nil),
-    aws_region: aws_credentials.fetch('region', nil),
-    redis_host: node[id]['redis']['host'],
-    redis_port: node[id]['redis']['port'],
+    redis_host: node['latest-redis']['listen']['address'],
+    redis_port: node['latest-redis']['listen']['port'],
     pg_host: node[id]['postgres']['host'],
     pg_port: node[id]['postgres']['port'],
     pg_username: node[id]['postgres']['username'],
@@ -125,7 +102,7 @@ end
 
 logs_basedir = ::File.join node[id]['basedir'], 'logs'
 
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
+supervisor_service "#{node[id]['supervisor_namespace']}.master.queue" do
   command 'sh script/queue'
   process_name 'queue-%(process_num)s'
   numprocs node[id]['backend']['queue']['processes']
@@ -154,16 +131,11 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
   stderr_events_enabled false
   environment(
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
-    'CTFTIME_SCOREBOARD' => post_scoreboard,
-    'AWS_ACCESS_KEY_ID' => aws_credentials.fetch('access_key_id', nil),
-    'AWS_SECRET_ACCESS_KEY' => aws_credentials.fetch('secret_access_key', nil),
-    'AWS_REGION' => aws_credentials.fetch('region', nil),
-    'AWS_BUCKET' => aws_credentials.fetch('bucket', nil),
     'INSTANCE' => '%(process_num)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
-    'REDIS_HOST' => node[id]['redis']['host'],
-    'REDIS_PORT' => node[id]['redis']['port'],
+    'REDIS_HOST' => node['latest-redis']['listen']['address'],
+    'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
     'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
@@ -182,7 +154,7 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.queue" do
   action :enable
 end
 
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
+supervisor_service "#{node[id]['supervisor_namespace']}.master.scheduler" do
   command 'sh script/scheduler'
   process_name 'scheduler'
   numprocs 1
@@ -213,8 +185,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.scheduler" do
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
-    'REDIS_HOST' => node[id]['redis']['host'],
-    'REDIS_PORT' => node[id]['redis']['port'],
+    'REDIS_HOST' => node['latest-redis']['listen']['address'],
+    'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
     'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
@@ -232,7 +204,7 @@ end
 
 team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
 
-supervisor_service "#{node[id]['supervisor']['namespace']}.master.server" do
+supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
   command 'sh script/server'
   process_name 'server-%(process_num)s'
   numprocs node[id]['backend']['server']['processes']
@@ -268,8 +240,8 @@ supervisor_service "#{node[id]['supervisor']['namespace']}.master.server" do
     'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
     'STDOUT_SYNC' => node[id]['backend']['debug'],
     'RACK_ENV' => node.chef_environment,
-    'REDIS_HOST' => node[id]['redis']['host'],
-    'REDIS_PORT' => node[id]['redis']['port'],
+    'REDIS_HOST' => node['latest-redis']['listen']['address'],
+    'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
     'PG_PORT' => node[id]['postgres']['port'],
     'PG_USERNAME' => node[id]['postgres']['username'],
