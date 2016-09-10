@@ -1,3 +1,4 @@
+require 'json'
 id = 'themis-finals'
 
 basedir = ::File.join node[id]['basedir'], 'stream'
@@ -30,6 +31,7 @@ if node.chef_environment.start_with? 'development'
   begin
     git_data_bag_item = data_bag_item('git', node.chef_environment)
   rescue
+    ::Chef::Log.warn 'Check whether git data bag exists!'
   end
 
   git_options = (git_data_bag_item.nil?) ? {} : git_data_bag_item.to_hash.fetch('config', {})
@@ -56,13 +58,40 @@ end
 
 logs_basedir = ::File.join node[id]['basedir'], 'logs'
 
+execute 'Build stream scripts' do
+  command 'npm run build'
+  cwd basedir
+  user node[id]['user']
+  group node[id]['group']
+  environment(
+    'HOME' => "/home/#{node[id]['user']}"
+  )
+end
+
+config = {
+  network: {
+    internal: node['themis-finals']['config']['internal_networks'],
+    team: node['themis-finals']['config']['teams'].values.map { |x| x['network']}
+  }
+}
+
+config_file = ::File.join basedir, 'config.json'
+
+file config_file do
+  owner node[id]['user']
+  group node[id]['group']
+  mode 0644
+  content JSON.pretty_generate(config)
+  action :create
+end
+
 supervisor_service "#{node[id]['supervisor_namespace']}.master.stream" do
   command 'node ./dist/server.js'
   process_name 'stream-%(process_num)s'
   numprocs node[id]['stream']['processes']
   numprocs_start 0
   priority 300
-  autostart false
+  autostart node[id]['autostart']
   autorestart true
   startsecs 1
   startretries 3
@@ -87,7 +116,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.stream" do
     'HOST' => '127.0.0.1',
     'PORT' => node[id]['stream']['port_range_start'],
     'INSTANCE' => '%(process_num)s',
-    'LOG_LEVEL' => node[id]['stream']['debug'] ? 'debug' : 'info',
+    'LOG_LEVEL' => node[id]['debug'] ? 'debug' : 'info',
     'REDIS_HOST' => node['latest-redis']['listen']['address'],
     'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
@@ -101,14 +130,4 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.stream" do
   directory basedir
   serverurl 'AUTO'
   action :enable
-end
-
-execute 'Build stream scripts' do
-  command 'npm run build'
-  cwd basedir
-  user node[id]['user']
-  group node[id]['group']
-  environment(
-    'HOME' => "/home/#{node[id]['user']}"
-  )
 end

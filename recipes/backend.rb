@@ -30,6 +30,7 @@ if node.chef_environment.start_with? 'development'
   begin
     git_data_bag_item = data_bag_item('git', node.chef_environment)
   rescue
+    ::Chef::Log.warn 'Check whether git data bag exists!'
   end
 
   git_options = (git_data_bag_item.nil?) ? {} : git_data_bag_item.to_hash.fetch('config', {})
@@ -54,12 +55,20 @@ rbenv_execute "Install dependencies at #{basedir}" do
   group node[id]['group']
 end
 
-execute "Copy customization file at #{basedir}" do
-  command 'cp config.example.rb config.rb'
-  cwd basedir
+config_file = ::File.join basedir, 'config.rb'
+
+template config_file do
+  source 'config.rb.erb'
   user node[id]['user']
   group node[id]['group']
-  not_if "test -e #{basedir}/config.rb"
+  mode 0644
+  variables(
+    internal_networks: node[id]['config']['internal_networks'],
+    contest: node[id]['config']['contest'],
+    teams: node[id]['config']['teams'],
+    services: node[id]['config']['services']
+  )
+  action :create
 end
 
 dotenv_file = ::File.join basedir, '.env'
@@ -108,7 +117,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.queue" do
   numprocs node[id]['backend']['queue']['processes']
   numprocs_start 0
   priority 300
-  autostart false
+  autostart node[id]['autostart']
   autorestart true
   startsecs 1
   startretries 3
@@ -132,8 +141,8 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.queue" do
   environment(
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
     'INSTANCE' => '%(process_num)s',
-    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
-    'STDOUT_SYNC' => node[id]['backend']['debug'],
+    'LOG_LEVEL' => node[id]['debug'] ? 'DEBUG' : 'INFO',
+    'STDOUT_SYNC' => node[id]['debug'],
     'REDIS_HOST' => node['latest-redis']['listen']['address'],
     'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
@@ -141,6 +150,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.queue" do
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
+    'THEMIS_FINALS_FLAG_GENERATOR_SECRET' => data_bag_item('themis-finals', node.chef_environment)['flag_generator_secret'],
     'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
     'THEMIS_FINALS_MASTER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['master'],
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],
@@ -160,7 +170,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.scheduler" do
   numprocs 1
   numprocs_start 0
   priority 300
-  autostart false
+  autostart node[id]['autostart']
   autorestart true
   startsecs 1
   startretries 3
@@ -183,8 +193,8 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.scheduler" do
   stderr_events_enabled false
   environment(
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
-    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
-    'STDOUT_SYNC' => node[id]['backend']['debug'],
+    'LOG_LEVEL' => node[id]['debug'] ? 'DEBUG' : 'INFO',
+    'STDOUT_SYNC' => node[id]['debug'],
     'REDIS_HOST' => node['latest-redis']['listen']['address'],
     'REDIS_PORT' => node['latest-redis']['listen']['port'],
     'PG_HOST' => node[id]['postgres']['host'],
@@ -202,7 +212,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.scheduler" do
   action :enable
 end
 
-team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
+team_logo_dir = ::File.join node[id]['basedir'], 'team_logo'
 
 supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
   command 'sh script/server'
@@ -210,7 +220,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
   numprocs node[id]['backend']['server']['processes']
   numprocs_start 0
   priority 300
-  autostart false
+  autostart node[id]['autostart']
   autorestart true
   startsecs 1
   startretries 3
@@ -233,12 +243,11 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
   stderr_events_enabled false
   environment(
     'PATH' => '/usr/bin/env:/opt/rbenv/shims:%(ENV_PATH)s',
-    'TEAM_LOGOS_DIR' => team_logos_dir,
     'HOST' => '127.0.0.1',
     'PORT' => node[id]['backend']['server']['port_range_start'],
     'INSTANCE' => '%(process_num)s',
-    'LOG_LEVEL' => node[id]['backend']['debug'] ? 'DEBUG' : 'INFO',
-    'STDOUT_SYNC' => node[id]['backend']['debug'],
+    'LOG_LEVEL' => node[id]['debug'] ? 'DEBUG' : 'INFO',
+    'STDOUT_SYNC' => node[id]['debug'],
     'RACK_ENV' => node.chef_environment,
     'REDIS_HOST' => node['latest-redis']['listen']['address'],
     'REDIS_PORT' => node['latest-redis']['listen']['port'],
@@ -247,6 +256,7 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
     'PG_USERNAME' => node[id]['postgres']['username'],
     'PG_PASSWORD' => data_bag_item('postgres', node.chef_environment)['credentials'][node[id]['postgres']['username']],
     'PG_DATABASE' => node[id]['postgres']['dbname'],
+    'THEMIS_FINALS_TEAM_LOGO_DIR' => team_logo_dir,
     'THEMIS_FINALS_MASTER_FQDN' => node[id]['fqdn'],
     'THEMIS_FINALS_CHECKER_KEY' => data_bag_item('themis-finals', node.chef_environment)['keys']['checker'],
     'THEMIS_FINALS_KEY_NONCE_SIZE' => node[id]['key_nonce_size'],

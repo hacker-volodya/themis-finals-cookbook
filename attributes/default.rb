@@ -14,9 +14,11 @@ default[id]['postgres']['port'] = 5432
 
 default[id]['basedir'] = '/var/themis/finals'
 
+default[id]['debug'] = false
+default[id]['autostart'] = false
+
 default[id]['backend']['github_repository'] = 'aspyatkin/themis-finals-backend'
 default[id]['backend']['revision'] = 'master'
-default[id]['backend']['debug'] = true
 default[id]['backend']['queue']['redis_db'] = 2
 default[id]['backend']['queue']['processes'] = 2
 default[id]['backend']['server']['processes'] = 2
@@ -31,10 +33,9 @@ default[id]['stream']['redis_db'] = 1
 default[id]['stream']['redis_channel_namespace'] = 'themis.finals'
 default[id]['stream']['port_range_start'] = 4000
 default[id]['stream']['processes'] = 2
-default[id]['stream']['debug'] = true
 
-default[id]['visualization']['github_repository'] = 'VolgaCTF/rcc-2016-visualization'
-default[id]['visualization']['revision'] = 'master'
+# default[id]['visualization']['github_repository'] = 'VolgaCTF/rcc-2016-visualization'
+# default[id]['visualization']['revision'] = 'master'
 
 # default[id]['sentry']['postgres']['username'] = 'sentry_user'
 # default[id]['sentry']['postgres']['dbname'] = 'sentry'

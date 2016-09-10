@@ -30,6 +30,7 @@ if node.chef_environment.start_with? 'development'
   begin
     git_data_bag_item = data_bag_item('git', node.chef_environment)
   rescue
+    ::Chef::Log.warn 'Check whether git data bag exists!'
   end
 
   git_options = (git_data_bag_item.nil?) ? {} : git_data_bag_item.to_hash.fetch('config', {})

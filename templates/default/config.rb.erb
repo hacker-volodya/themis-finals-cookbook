@@ -1,0 +1,36 @@
+require './lib/configuration/init'
+
+module Themis
+  module Finals
+    module Configuration
+      network do
+        internal <%= @internal_networks.map { |x| "'#{x}'"}.join(', ') %>
+      end
+
+      contest_flow do
+        flag_lifetime <%= @contest['flag_lifetime'] %>
+        push_period <%= @contest['push_period'] %>
+        poll_period <%= @contest['poll_period'] %>
+        poll_count <%= @contest['poll_count'] %>
+        update_period <%= @contest['update_period'] %>
+        attack_limits <%= @contest['attack_limit']['attempts'] %>, <%= @contest['attack_limit']['time'] %>
+      end
+
+      <% @teams.each do |team_alias, team_data| %>
+      team '<%= team_alias %>' do
+        name '<%= team_data['name'] %>'
+        network '<%= team_data['network'] %>'
+        host '<%= team_data['host'] %>'
+      end
+      <% end %>
+
+      <% @services.each do |service_alias, service_data| %>
+      service '<%= service_alias %>' do
+        name '<%= service_data['name'] %>'
+        protocol <%= service_data['protocol'] %>
+        metadata push_url: '<%= service_data['metadata']['push_url'] %>', pull_url: '<%= service_data['metadata']['pull_url'] %>'
+      end
+      <% end %>
+    end
+  end
+end

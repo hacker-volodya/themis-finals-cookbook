@@ -29,9 +29,9 @@ directory logs_basedir do
   action :create
 end
 
-team_logos_dir = ::File.join node[id]['basedir'], 'team_logos'
+team_logo_dir = ::File.join node[id]['basedir'], 'team_logo'
 
-directory team_logos_dir do
+directory team_logo_dir do
   owner node[id]['user']
   group node[id]['group']
   mode 0755
@@ -95,7 +95,9 @@ template "#{node['nginx']['dir']}/sites-available/themis-finals.conf" do
     backend_server_port_range_start: \
       node[id]['backend']['server']['port_range_start'],
     stream_processes: node[id]['stream']['processes'],
-    stream_port_range_start: node[id]['stream']['port_range_start']
+    stream_port_range_start: node[id]['stream']['port_range_start'],
+    internal_networks: node[id]['config']['internal_networks'],
+    team_networks: node[id]['config']['teams'].values.map { |x| x['network']}
   )
   notifies :reload, 'service[nginx]', :delayed
   action :create

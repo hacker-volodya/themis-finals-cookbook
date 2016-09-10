@@ -1,6 +1,6 @@
 name 'themis-finals'
 description 'Installs and configures Themis Finals'
-version '1.2.0'
+version '1.2.1'
 
 recipe 'themis-finals', 'Installs and configures Themis Finals'
 depends 'latest-git', '~> 1.1.9'
