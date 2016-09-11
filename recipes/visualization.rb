@@ -12,18 +12,9 @@ directory basedir do
 end
 
 if node.chef_environment.start_with? 'development'
-  ssh_data_bag_item = nil
-  begin
-    ssh_data_bag_item = data_bag_item('ssh', node.chef_environment)
-  rescue
-  end
-
-  ssh_key_map = (ssh_data_bag_item.nil?) ? {} : ssh_data_bag_item.to_hash.fetch('keys', {})
-
-  if ssh_key_map.size > 0
-    url_repository = "git@github.com:#{node[id]['visualization']['github_repository']}.git"
-    ssh_known_hosts_entry 'github.com'
-  end
+  ssh_private_key node[id]['user']
+  ssh_known_hosts_entry 'github.com'
+  url_repository = "git@github.com:#{node[id]['visualization']['github_repository']}.git"
 end
 
 git2 basedir do
@@ -39,6 +30,7 @@ if node.chef_environment.start_with? 'development'
   begin
     git_data_bag_item = data_bag_item('git', node.chef_environment)
   rescue
+    ::Chef::Log.warn 'Check whether git data bag exists!'
   end
 
   git_options = (git_data_bag_item.nil?) ? {} : git_data_bag_item.to_hash.fetch('config', {})

@@ -34,8 +34,8 @@ default[id]['stream']['redis_channel_namespace'] = 'themis.finals'
 default[id]['stream']['port_range_start'] = 4000
 default[id]['stream']['processes'] = 2
 
-# default[id]['visualization']['github_repository'] = 'VolgaCTF/rcc-2016-visualization'
-# default[id]['visualization']['revision'] = 'master'
+default[id]['visualization']['github_repository'] = 'aspyatkin/themis-finals-visualization'
+default[id]['visualization']['revision'] = 'master'
 
 # default[id]['sentry']['postgres']['username'] = 'sentry_user'
 # default[id]['sentry']['postgres']['dbname'] = 'sentry'

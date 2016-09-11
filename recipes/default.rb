@@ -43,7 +43,7 @@ end
 include_recipe "#{id}::backend"
 include_recipe "#{id}::frontend"
 include_recipe "#{id}::stream"
-# include_recipe "#{id}::visualization"
+include_recipe "#{id}::visualization"
 
 namespace = "#{node[id]['supervisor_namespace']}.master"
 
