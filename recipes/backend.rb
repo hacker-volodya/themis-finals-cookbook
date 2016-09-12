@@ -269,3 +269,51 @@ supervisor_service "#{node[id]['supervisor_namespace']}.master.server" do
   serverurl 'AUTO'
   action :enable
 end
+
+enable_livetunnel = \
+  !node[id].fetch('live', {}).fetch('server_username', nil).nil? &&
+  !node[id].fetch('live', {}).fetch('server_hostname', nil).nil? &&
+  !node[id].fetch('live', {}).fetch('remote_port', nil).nil?
+
+if enable_livetunnel
+  ssh_private_key node[id]['user']
+  ssh_known_hosts_entry node[id]['live']['server_hostname']
+end
+
+supervisor_service "#{node[id]['supervisor_namespace']}.master.livetunnel" do
+  command 'sh script/livetunnel'
+  process_name 'livetunnel'
+  numprocs 1
+  numprocs_start 0
+  priority 300
+  autostart node[id]['autostart']
+  autorestart true
+  startsecs 1
+  startretries 3
+  exitcodes [0, 2]
+  stopsignal :INT
+  stopwaitsecs 10
+  stopasgroup true
+  killasgroup true
+  user node[id]['user']
+  redirect_stderr false
+  stdout_logfile ::File.join logs_basedir, 'livetunnel-stdout.log'
+  stdout_logfile_maxbytes '10MB'
+  stdout_logfile_backups 10
+  stdout_capture_maxbytes '0'
+  stdout_events_enabled false
+  stderr_logfile ::File.join logs_basedir, 'livetunnel-stderr.log'
+  stderr_logfile_maxbytes '10MB'
+  stderr_logfile_backups 10
+  stderr_capture_maxbytes '0'
+  stderr_events_enabled false
+  environment(
+    'PATH' => '/usr/bin/env:%(ENV_PATH)s',
+    'REMOTE_PORT' => node[id].fetch('live', {}).fetch('remote_port', nil),
+    'SERVER_USERNAME' => node[id].fetch('live', {}).fetch('server_username', nil),
+    'SERVER_HOSTNAME' => node[id].fetch('live', {}).fetch('server_hostname', nil)
+  )
+  directory basedir
+  serverurl 'AUTO'
+  action (enable_livetunnel ? :enable : :disable)
+end

@@ -52,7 +52,8 @@ supervisor_group namespace do
     "#{namespace}.stream",
     "#{namespace}.queue",
     "#{namespace}.scheduler",
-    "#{namespace}.server"
+    "#{namespace}.server",
+    "#{namespace}.livetunnel"
   ]
   action :enable
 end
@@ -83,11 +84,14 @@ template archive_script do
   )
 end
 
-template "#{node['nginx']['dir']}/sites-available/themis-finals.conf" do
+ngx_conf = 'themis-finals.conf'
+
+template "#{node['nginx']['dir']}/sites-available/#{ngx_conf}" do
   source 'nginx.conf.erb'
   mode 0644
   variables(
     server_name: node[id]['fqdn'],
+    live_server_name: node[id].fetch('live', {}).fetch('fqdn', nil),
     logs_basedir: logs_basedir,
     frontend_basedir: ::File.join(node[id]['basedir'], 'frontend'),
     visualization_basedir: node[id]['basedir'],
@@ -97,12 +101,10 @@ template "#{node['nginx']['dir']}/sites-available/themis-finals.conf" do
     stream_processes: node[id]['stream']['processes'],
     stream_port_range_start: node[id]['stream']['port_range_start'],
     internal_networks: node[id]['config']['internal_networks'],
-    team_networks: node[id]['config']['teams'].values.map { |x| x['network']}
+    team_networks: node[id]['config']['teams'].values.map { |x| x['network'] }
   )
   notifies :reload, 'service[nginx]', :delayed
   action :create
 end
 
-nginx_site 'themis-finals.conf'
-
-include_recipe "#{id}::tools_monitoring"
+nginx_site ngx_conf

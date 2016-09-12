@@ -12,7 +12,7 @@ upstream stream {
 
 server {
   listen 80;
-  server_name <%= @server_name %>;
+  server_name <%= @server_name %><% unless @live_server_name.nil? %><%= " #{@live_server_name}" %><% end %>;
 
   access_log <%= @logs_basedir %>/nginx_access.log;
   error_log <%= @logs_basedir %>/nginx_error.log;
@@ -47,7 +47,7 @@ server {
     proxy_buffering off;
     proxy_cache off;
 
-    client_max_body_size 1k;
+    client_max_body_size 1m;
   }
 
   location /api/submit {
