@@ -24,7 +24,7 @@ default[id]['backend']['queue']['processes'] = 2
 default[id]['backend']['server']['processes'] = 2
 default[id]['backend']['server']['port_range_start'] = 3000
 
-default[id]['frontend']['github_repository'] = 'aspyatkin/themis-finals-frontend'
+default[id]['frontend']['github_repository'] = 'd3fl4t3/themis-finals-frontend'
 default[id]['frontend']['revision'] = 'master'
 
 default[id]['stream']['github_repository'] = 'aspyatkin/themis-finals-stream'
